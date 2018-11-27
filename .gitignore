@@ -1,0 +1,7 @@
+*.swo
+*.swp
+
+.idea
+cmake-build-debug
+
+*.o
