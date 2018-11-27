@@ -1,22 +1,21 @@
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_executable(misc_test
-            misc_test.cc
-            misc.cc
-            )
-
-    target_link_libraries(misc_test pthread)
+    add_subdirectory(test)
 endif ()
+
+file(GLOB MISC_HEADER_LIST "*.h")
+file(GLOB MISC_SRC_LIST "*.cc")
 
 
 add_library(libmisc_static STATIC
-        misc.cc
+        ${MISC_SRC_LIST}
         )
 
 set_target_properties(libmisc_static PROPERTIES OUTPUT_NAME "misc")
 
-install(TARGETS libmisc_static
-        ARCHIVE DESTINATION lib)
 
-install(FILES misc.h
+install(FILES ${MISC_HEADER_LIST}
         DESTINATION include/misc
         )
+
+install(TARGETS libmisc_static
+        ARCHIVE DESTINATION lib)

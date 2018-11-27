@@ -4,8 +4,8 @@
 
 #include "gtest/gtest.h"
 
-#include "base.h"
-#include "file_writer.h"
+#include "log/base.h"
+#include "log/file_writer.h"
 
 class FileWriterTest : public ::testing::Test {
  protected:
@@ -17,13 +17,13 @@ class FileWriterTest : public ::testing::Test {
     delete writer_;
   }
 
-  cppbox::FileWriter *writer_;
+  cppbox::WriterInterface *writer_;
 };
 
 TEST_F(FileWriterTest, Write) {
   for (int i = 0; i < 100; i++) {
     std::string msg = "hello " + std::to_string(i) + "\n";
-    writer_->Write(msg.c_str(), msg.size());
+    writer_->Write(msg);
   }
 
   sleep(10);

@@ -4,16 +4,17 @@
 
 #include "simple_logger.h"
 
-#include <iostream>
 
 namespace cppbox {
 
-SimpleLogger::SimpleLogger() {
-  std::cout << "construct" << std::endl;
+SimpleLogger::SimpleLogger(WriterSptr &writer, FormaterSptr &formater, LogLevel g_level) :
+        writer_sptr_(writer),
+        formater_sptr_(formater),
+        g_level_(g_level) {
 }
 
 SimpleLogger::~SimpleLogger() {
-  std::cout << "destruct" << std::endl;
+  writer_sptr_->Flush();
 }
 
 void SimpleLogger::Debug(const std::string &msg) {
@@ -78,15 +79,6 @@ void SimpleLogger::Emergency(const std::string &msg) {
 
 void SimpleLogger::Emergency(const std::initializer_list<std::string> &partList) {
   Log(LogLevel::kEMERGENCY, partList);
-
-}
-
-void SimpleLogger::Log(LogLevel level, const std::string &msg) {
-  std::cout << kLogLevelMsgList[level]
-            << " "
-            << msg
-            << " "
-            << std::endl;
 }
 
 void SimpleLogger::Log(LogLevel level, const std::initializer_list<std::string> &partList) {
@@ -100,11 +92,21 @@ void SimpleLogger::Log(LogLevel level, const std::initializer_list<std::string> 
   ++it;
 
   while (it != partList.end()) {
-    msg += " " + *it;
+    msg += "|" + *it;
     ++it;
   }
 
   Log(level, msg);
 }
+
+
+void SimpleLogger::Log(LogLevel level, const std::string &msg) {
+  if (level > g_level_) {
+    return;
+  }
+
+  writer_sptr_->Write(formater_sptr_->Format(level, msg));
+}
+
 
 }

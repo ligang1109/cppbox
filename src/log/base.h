@@ -7,10 +7,11 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace cppbox {
 
-enum LogLevel {
+enum class LogLevel {
   kEMERGENCY = 0,
   kALERT     = 1,
   kCRITICAL  = 2,
@@ -71,6 +72,7 @@ class LoggerInterface {
   virtual void Log(LogLevel level, const std::initializer_list<std::string> &partList) = 0;
 };
 
+
 class WriterInterface {
  public:
   virtual ~WriterInterface() = default;
@@ -81,6 +83,20 @@ class WriterInterface {
 
   virtual int Flush() = 0;
 };
+
+
+class FormaterInterface {
+ public:
+  virtual ~FormaterInterface() = default;
+
+  virtual std::string Format(LogLevel level, const std::string &msg) = 0;
+};
+
+
+using LoggerSptr = std::shared_ptr<LoggerInterface>;
+using WriterSptr = std::shared_ptr<WriterInterface>;
+using FormaterSptr = std::shared_ptr<FormaterInterface>;
+
 
 }
 

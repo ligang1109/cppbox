@@ -11,7 +11,7 @@
 
 namespace cppbox {
 
-FileWriter::FileWriter(const char *path) :
+FileWriter:: FileWriter(const char *path) :
         path_(path),
         fp_(fopen(path, "a")) {
   gettimeofday(&now_time_, nullptr);
@@ -25,10 +25,11 @@ FileWriter::~FileWriter() {
 }
 
 size_t FileWriter::Write(const char *msg, size_t len) {
+  std::lock_guard<std::mutex> lock(mutex_);
+
   gettimeofday(&now_time_, nullptr);
   if (last_write_seconds_ != now_time_.tv_sec) {
     if (!Misc::FileExist(path_)) {
-      Flush();
       fclose(fp_);
       fp_ = fopen(path_, "a");
     }
@@ -43,6 +44,12 @@ size_t FileWriter::Write(const std::string &msg) {
 }
 
 int FileWriter::Flush() {
+  std::lock_guard<std::mutex> lock(mutex_);
+
+  return FlushUnlocked();
+}
+
+int FileWriter::FlushUnlocked() {
   return ::fflush(fp_);
 }
 

@@ -5,11 +5,15 @@
 #ifndef CPPBOX_LOG_FILE_WRITER_H
 #define CPPBOX_LOG_FILE_WRITER_H
 
+#include <mutex>
+
 #include "base.h"
+
+#include "misc/non_copyable.h"
 
 namespace cppbox {
 
-class FileWriter : public WriterInterface {
+class FileWriter : public WriterInterface, public NonCopyable {
  public:
   explicit FileWriter(const char *path);
 
@@ -27,6 +31,10 @@ class FileWriter : public WriterInterface {
 
   struct timeval now_time_;
   time_t         last_write_seconds_;
+
+  std::mutex mutex_;
+
+  int FlushUnlocked();
 };
 
 }
