@@ -21,9 +21,10 @@ include_directories(
 )
 
 
-set(LOG_SRC_DIR ${SRC_DIR}/log)
 set(MISC_SRC_DIR ${SRC_DIR}/misc)
+set(LOG_SRC_DIR ${SRC_DIR}/log)
 
 
-add_subdirectory(${LOG_SRC_DIR})
+
 add_subdirectory(${MISC_SRC_DIR})
+add_subdirectory(${LOG_SRC_DIR})
