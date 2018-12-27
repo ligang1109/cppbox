@@ -10,27 +10,27 @@
 class SimpleFormaterTest : public ::testing::Test {
  protected:
   SimpleFormaterTest() {
-    formater_ = new cppbox::SimpleFormater("abcdefg", "127.0.0.1:12345");
+    formater_ = new cppbox::log::SimpleFormater("abcdefg", "127.0.0.1:12345");
   }
 
   ~SimpleFormaterTest() override {
     delete formater_;
   }
 
-  cppbox::FormaterInterface *formater_;
+  cppbox::log::FormaterInterface *formater_;
 };
 
 TEST_F(SimpleFormaterTest, Format) {
   std::string msg("test formater");
 
-  std::cout << formater_->Format(cppbox::LogLevel::kDEBUG, msg);
-  std::cout << formater_->Format(cppbox::LogLevel::kINFO, msg);
-  std::cout << formater_->Format(cppbox::LogLevel::kNOTICE, msg);
-  std::cout << formater_->Format(cppbox::LogLevel::kWARNING, msg);
-  std::cout << formater_->Format(cppbox::LogLevel::kERROR, msg);
-  std::cout << formater_->Format(cppbox::LogLevel::kCRITICAL, msg);
-  std::cout << formater_->Format(cppbox::LogLevel::kALERT, msg);
-  std::cout << formater_->Format(cppbox::LogLevel::kEMERGENCY, msg);
+  std::cout << formater_->Format(cppbox::log::LogLevel::kDEBUG, msg);
+  std::cout << formater_->Format(cppbox::log::LogLevel::kINFO, msg);
+  std::cout << formater_->Format(cppbox::log::LogLevel::kNOTICE, msg);
+  std::cout << formater_->Format(cppbox::log::LogLevel::kWARNING, msg);
+  std::cout << formater_->Format(cppbox::log::LogLevel::kERROR, msg);
+  std::cout << formater_->Format(cppbox::log::LogLevel::kCRITICAL, msg);
+  std::cout << formater_->Format(cppbox::log::LogLevel::kALERT, msg);
+  std::cout << formater_->Format(cppbox::log::LogLevel::kEMERGENCY, msg);
 }
 
 int main(int argc, char **argv) {

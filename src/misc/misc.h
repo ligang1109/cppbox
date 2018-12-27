@@ -15,23 +15,23 @@
 
 namespace cppbox {
 
-static const char *kGeneralTimeLayout = "%Y-%m-%d %H:%M:%S";
+namespace misc {
 
-class Misc : public NonCopyable {
- public:
-  Misc() = delete;
+static const char *kGeneralTimeLayout1 = "%Y-%m-%d %H:%M:%S";
 
-  static bool FileExist(const char *path);
+bool FileExist(const char *path);
 
-  static bool DirExist(const char *path);
+bool DirExist(const char *path);
 
-  static std::string FormatTime(time_t ts = 0, const char *layout = nullptr);
+std::string FormatTime(time_t ts = 0, const char *layout = nullptr);
 
-  template<typename T, typename ... Ts>
-  static std::unique_ptr<T> MakeUnique(Ts &&...params) {
-    return std::unique_ptr<T>(new T(std::forward<Ts>(params)...));
-  }
-};
+template<typename T, typename ... Ts>
+std::unique_ptr<T> MakeUnique(Ts &&...params) {
+  return std::unique_ptr<T>(new T(std::forward<Ts>(params)...));
+}
+
+}
+
 
 }
 

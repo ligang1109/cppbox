@@ -13,11 +13,11 @@
 class BufferWriterTest : public ::testing::Test {
  protected:
   BufferWriterTest() {
-    cppbox::WriterSptr cw = std::make_shared<cppbox::ConsoleWriter>();
-    console_writer_ = new cppbox::BufferWriter(cw, 4096);
+    cppbox::log::WriterSptr cw = std::make_shared<cppbox::log::ConsoleWriter>();
+    console_writer_ = new cppbox::log::BufferWriter(cw, 4096);
 
-    cppbox::WriterSptr fw = std::make_shared<cppbox::FileWriter>("/tmp/cppbox_buffer_writer_test.log");
-    file_writer_ = new cppbox::BufferWriter(fw, 4096);
+    cppbox::log::WriterSptr fw = std::make_shared<cppbox::log::FileWriter>("/tmp/cppbox_buffer_writer_test.log");
+    file_writer_ = new cppbox::log::BufferWriter(fw, 4096);
   }
 
   ~BufferWriterTest() override {
@@ -25,8 +25,8 @@ class BufferWriterTest : public ::testing::Test {
     delete file_writer_;
   }
 
-  cppbox::WriterInterface *console_writer_;
-  cppbox::WriterInterface *file_writer_;
+  cppbox::log::WriterInterface *console_writer_;
+  cppbox::log::WriterInterface *file_writer_;
 };
 
 TEST_F(BufferWriterTest, Write) {

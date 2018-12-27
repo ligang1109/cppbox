@@ -11,6 +11,9 @@
 
 namespace cppbox {
 
+namespace log {
+
+
 enum class LogLevel {
   kEMERGENCY = 0,
   kALERT     = 1,
@@ -96,6 +99,9 @@ class FormaterInterface {
 using LoggerSptr = std::shared_ptr<LoggerInterface>;
 using WriterSptr = std::shared_ptr<WriterInterface>;
 using FormaterSptr = std::shared_ptr<FormaterInterface>;
+
+
+}
 
 
 }

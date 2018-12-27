@@ -11,7 +11,9 @@
 
 namespace cppbox {
 
-FileWriter:: FileWriter(const char *path) :
+namespace log {
+
+FileWriter::FileWriter(const char *path) :
         path_(path),
         fp_(fopen(path, "a")) {
   gettimeofday(&now_time_, nullptr);
@@ -29,7 +31,7 @@ size_t FileWriter::Write(const char *msg, size_t len) {
 
   gettimeofday(&now_time_, nullptr);
   if (last_write_seconds_ != now_time_.tv_sec) {
-    if (!Misc::FileExist(path_)) {
+    if (!misc::FileExist(path_)) {
       fclose(fp_);
       fp_ = fopen(path_, "a");
     }
@@ -52,5 +54,9 @@ int FileWriter::Flush() {
 int FileWriter::FlushUnlocked() {
   return ::fflush(fp_);
 }
+
+
+}
+
 
 }

@@ -10,14 +10,14 @@
 class FileWriterTest : public ::testing::Test {
  protected:
   FileWriterTest() {
-    writer_ = new cppbox::FileWriter("/tmp/cppbox_file_writer_test.log");
+    writer_ = new cppbox::log::FileWriter("/tmp/cppbox_file_writer_test.log");
   }
 
   ~FileWriterTest() override {
     delete writer_;
   }
 
-  cppbox::WriterInterface *writer_;
+  cppbox::log::WriterInterface *writer_;
 };
 
 TEST_F(FileWriterTest, Write) {

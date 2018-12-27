@@ -7,6 +7,8 @@
 
 namespace cppbox {
 
+namespace log {
+
 SimpleLogger::SimpleLogger(WriterSptr &writer, FormaterSptr &formater, LogLevel g_level) :
         writer_sptr_(writer),
         formater_sptr_(formater),
@@ -106,6 +108,9 @@ void SimpleLogger::Log(LogLevel level, const std::string &msg) {
   }
 
   writer_sptr_->Write(formater_sptr_->Format(level, msg));
+}
+
+
 }
 
 

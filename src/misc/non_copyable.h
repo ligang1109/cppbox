@@ -7,6 +7,9 @@
 
 namespace cppbox {
 
+
+namespace misc {
+
 class NonCopyable {
  public:
   NonCopyable(const NonCopyable &) = delete;
@@ -18,6 +21,10 @@ class NonCopyable {
 
   ~NonCopyable() = default;
 };
+
+
+}
+
 
 }
 

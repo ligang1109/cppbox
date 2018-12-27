@@ -13,12 +13,14 @@
 
 namespace cppbox {
 
+namespace log {
 
-AsyncWriter::AsyncWriter(cppbox::WriterSptr &writer, size_t flush_size, int flush_seconds) :
+
+AsyncWriter::AsyncWriter(WriterSptr &writer, size_t flush_size, int flush_seconds) :
         writer_sptr_(writer),
         flush_size_(flush_size),
-        cur_buffer_uptr_(Misc::MakeUnique<SimpleBuffer>(flush_size)),
-        next_buffer_uptr_(Misc::MakeUnique<SimpleBuffer>(flush_size)),
+        cur_buffer_uptr_(misc::MakeUnique<misc::SimpleBuffer>(flush_size)),
+        next_buffer_uptr_(misc::MakeUnique<misc::SimpleBuffer>(flush_size)),
         running_(true),
         write_thread_(std::bind(&AsyncWriter::WriteThreadFunc, this, flush_seconds)) {}
 
@@ -48,7 +50,7 @@ size_t AsyncWriter::Write(const char *msg, size_t len) {
   if (next_buffer_uptr_) {
     cur_buffer_uptr_ = std::move(next_buffer_uptr_);
   } else {
-    cur_buffer_uptr_.reset(new SimpleBuffer(flush_size_));
+    cur_buffer_uptr_.reset(new misc::SimpleBuffer(flush_size_));
   }
 
   if (len > cur_buffer_uptr_->Remain()) {
@@ -63,9 +65,9 @@ size_t AsyncWriter::Write(const char *msg, size_t len) {
 
 
 void AsyncWriter::WriteThreadFunc(int flush_seconds) {
-  SimpleBufferUptr              cur_buffer_prepare  = Misc::MakeUnique<SimpleBuffer>(flush_size_);
-  SimpleBufferUptr              next_buffer_prepare = Misc::MakeUnique<SimpleBuffer>(flush_size_);
-  std::vector<SimpleBufferUptr> buffer_list_to_write;
+  misc::SimpleBufferUptr              cur_buffer_prepare  = misc::MakeUnique<misc::SimpleBuffer>(flush_size_);
+  misc::SimpleBufferUptr              next_buffer_prepare = misc::MakeUnique<misc::SimpleBuffer>(flush_size_);
+  std::vector<misc::SimpleBufferUptr> buffer_list_to_write;
 
   while (running_) {
     {
@@ -96,7 +98,7 @@ void AsyncWriter::WriteThreadFunc(int flush_seconds) {
         buffer_list_to_write.pop_back();
         next_buffer_prepare->Reset();
       } else {
-        next_buffer_prepare.reset(new SimpleBuffer(flush_size_));
+        next_buffer_prepare.reset(new misc::SimpleBuffer(flush_size_));
       }
     }
 
@@ -105,5 +107,7 @@ void AsyncWriter::WriteThreadFunc(int flush_seconds) {
   }
 }
 
+
+}
 
 }

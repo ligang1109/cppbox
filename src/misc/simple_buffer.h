@@ -12,6 +12,9 @@
 
 namespace cppbox {
 
+namespace misc {
+
+
 class SimpleBuffer : public NonCopyable {
  public:
   explicit SimpleBuffer(size_t size);
@@ -36,6 +39,10 @@ class SimpleBuffer : public NonCopyable {
 };
 
 using SimpleBufferUptr = std::unique_ptr<SimpleBuffer>;
+
+
+}
+
 
 }
 

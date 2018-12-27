@@ -8,9 +8,11 @@
 
 namespace cppbox {
 
+namespace log {
+
 BufferWriter::BufferWriter(WriterSptr &writer, size_t size) :
         writer_sptr_(writer),
-        buffer_uptr_(Misc::MakeUnique<SimpleBuffer>(size)) {
+        buffer_uptr_(misc::MakeUnique<misc::SimpleBuffer>(size)) {
 }
 
 BufferWriter::~BufferWriter() {
@@ -54,5 +56,9 @@ size_t BufferWriter::Write(const char *msg, size_t len) {
 size_t BufferWriter::Write(const std::string &msg) {
   return Write(msg.c_str(), msg.size());
 }
+
+
+}
+
 
 }

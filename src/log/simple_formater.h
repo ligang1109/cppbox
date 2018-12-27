@@ -9,6 +9,9 @@
 
 namespace cppbox {
 
+namespace log {
+
+
 class SimpleFormater : public FormaterInterface {
  public:
   explicit SimpleFormater(const std::string &log_id = "-", const std::string &address = "-");
@@ -23,6 +26,10 @@ class SimpleFormater : public FormaterInterface {
   time_t         last_fmt_seconds_;
   std::string    last_fmt_seconds_str_;
 };
+
+
+}
+
 
 }
 

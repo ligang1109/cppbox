@@ -9,14 +9,14 @@
 class SimpleBufferTest : public ::testing::Test {
  protected:
   SimpleBufferTest() {
-    sbufp_ = new cppbox::SimpleBuffer(100);
+    sbufp_ = new cppbox::misc::SimpleBuffer(100);
   }
 
   ~SimpleBufferTest() {
     delete sbufp_;
   }
 
-  cppbox::SimpleBuffer *sbufp_;
+  cppbox::misc::SimpleBuffer *sbufp_;
 };
 
 TEST_F(SimpleBufferTest, Buffer) {

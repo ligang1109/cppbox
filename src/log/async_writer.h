@@ -16,8 +16,10 @@
 
 namespace cppbox {
 
+namespace log {
 
-class AsyncWriter : public WriterInterface, public NonCopyable {
+
+class AsyncWriter : public WriterInterface, public misc::NonCopyable {
  public:
   explicit AsyncWriter(WriterSptr &writer, size_t flush_size = 4096 * 1000, int flush_seconds = 3);
 
@@ -35,9 +37,9 @@ class AsyncWriter : public WriterInterface, public NonCopyable {
   WriterSptr writer_sptr_;
   size_t     flush_size_;
 
-  SimpleBufferUptr              cur_buffer_uptr_;
-  SimpleBufferUptr              next_buffer_uptr_;
-  std::vector<SimpleBufferUptr> buffer_list_;
+  misc::SimpleBufferUptr              cur_buffer_uptr_;
+  misc::SimpleBufferUptr              next_buffer_uptr_;
+  std::vector<misc::SimpleBufferUptr> buffer_list_;
 
   std::mutex              mutex_;
   std::condition_variable cond_;
@@ -46,6 +48,8 @@ class AsyncWriter : public WriterInterface, public NonCopyable {
   std::thread   write_thread_;
 };
 
+
+}
 
 }
 

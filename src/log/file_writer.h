@@ -13,7 +13,10 @@
 
 namespace cppbox {
 
-class FileWriter : public WriterInterface, public NonCopyable {
+namespace log {
+
+
+class FileWriter : public WriterInterface, public misc::NonCopyable {
  public:
   explicit FileWriter(const char *path);
 
@@ -36,6 +39,10 @@ class FileWriter : public WriterInterface, public NonCopyable {
 
   int FlushUnlocked();
 };
+
+
+}
+
 
 }
 

@@ -7,6 +7,8 @@
 
 namespace cppbox {
 
+namespace misc {
+
 SimpleBuffer::SimpleBuffer(size_t size) : buf_(size), used_(0) {}
 
 size_t SimpleBuffer::Remain() {
@@ -43,5 +45,9 @@ size_t SimpleBuffer::Used() {
 std::string SimpleBuffer::ToString() {
   return std::string(Base(), Used());
 }
+
+
+}
+
 
 }

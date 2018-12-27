@@ -8,6 +8,9 @@
 
 namespace cppbox {
 
+namespace log {
+
+
 size_t ConsoleWriter::Write(const std::string &msg) {
   std::lock_guard<std::mutex> lock(mutex_);
 
@@ -15,9 +18,11 @@ size_t ConsoleWriter::Write(const std::string &msg) {
 }
 
 size_t ConsoleWriter::Write(const char *msg, size_t len) {
-  std::string str(msg, len);
-
-  Write(str);
+  Write(std::string(msg, len));
 }
+
+
+}
+
 
 }

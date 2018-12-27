@@ -18,18 +18,18 @@ class SimpleLoggerTest : public ::testing::Test {
   SimpleLoggerTest() {
     std::string          log_id("abcdefg");
     std::string          address("127.0.0.1:12345");
-    cppbox::FormaterSptr fr = std::make_shared<cppbox::SimpleFormater>(log_id, address);
+    cppbox::log::FormaterSptr fr = std::make_shared<cppbox::log::SimpleFormater>(log_id, address);
 
-    cppbox::WriterSptr cw = std::make_shared<cppbox::ConsoleWriter>();
-    clogger_ = new cppbox::SimpleLogger(cw, fr, cppbox::LogLevel::kDEBUG);
+    cppbox::log::WriterSptr cw = std::make_shared<cppbox::log::ConsoleWriter>();
+    clogger_ = new cppbox::log::SimpleLogger(cw, fr, cppbox::log::LogLevel::kDEBUG);
 
-    cppbox::WriterSptr fw = std::make_shared<cppbox::FileWriter>("/tmp/cppbox_simple_logger_buffer_test.log");
-    cppbox::WriterSptr bw = std::make_shared<cppbox::BufferWriter>(fw);
-    flogger_ = new cppbox::SimpleLogger(bw, fr, cppbox::LogLevel::kDEBUG);
+    cppbox::log::WriterSptr fw = std::make_shared<cppbox::log::FileWriter>("/tmp/cppbox_simple_logger_buffer_test.log");
+    cppbox::log::WriterSptr bw = std::make_shared<cppbox::log::BufferWriter>(fw);
+    flogger_ = new cppbox::log::SimpleLogger(bw, fr, cppbox::log::LogLevel::kDEBUG);
 
-    cppbox::WriterSptr afw = std::make_shared<cppbox::FileWriter>("/tmp/cppbox_simple_logger_async_test.log");
-    cppbox::WriterSptr aw  = std::make_shared<cppbox::AsyncWriter>(afw);
-    alogger_ = new cppbox::SimpleLogger(aw, fr, cppbox::LogLevel::kDEBUG);
+    cppbox::log::WriterSptr afw = std::make_shared<cppbox::log::FileWriter>("/tmp/cppbox_simple_logger_async_test.log");
+    cppbox::log::WriterSptr aw  = std::make_shared<cppbox::log::AsyncWriter>(afw);
+    alogger_ = new cppbox::log::SimpleLogger(aw, fr, cppbox::log::LogLevel::kDEBUG);
   }
 
   ~SimpleLoggerTest() override {
@@ -38,12 +38,12 @@ class SimpleLoggerTest : public ::testing::Test {
     delete alogger_;
   }
 
-  cppbox::LoggerInterface *clogger_;
-  cppbox::LoggerInterface *flogger_;
-  cppbox::LoggerInterface *alogger_;
+  cppbox::log::LoggerInterface *clogger_;
+  cppbox::log::LoggerInterface *flogger_;
+  cppbox::log::LoggerInterface *alogger_;
 };
 
-void log(cppbox::LoggerInterface *logger) {
+void log(cppbox::log::LoggerInterface *logger) {
   logger->Debug("hello");
   logger->Debug({"abc", "bcd", "cde"});
 
@@ -69,7 +69,7 @@ void log(cppbox::LoggerInterface *logger) {
   logger->Emergency({"abc", "bcd", "cde"});
 
   sleep(10);
-  logger->Log(cppbox::LogLevel::kNOTICE, "log after sleep");
+  logger->Log(cppbox::log::LogLevel::kNOTICE, "log after sleep");
 }
 
 TEST_F(SimpleLoggerTest, Log) {

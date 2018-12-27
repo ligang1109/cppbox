@@ -10,14 +10,14 @@
 class ConsoleWriterTest : public ::testing::Test {
  protected:
   ConsoleWriterTest() {
-    writer_ = new cppbox::ConsoleWriter();
+    writer_ = new cppbox::log::ConsoleWriter();
   }
 
   ~ConsoleWriterTest() override {
     delete writer_;
   }
 
-  cppbox::WriterInterface *writer_;
+  cppbox::log::WriterInterface *writer_;
 };
 
 TEST_F(ConsoleWriterTest, Write) {

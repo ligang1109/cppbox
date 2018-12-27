@@ -13,7 +13,10 @@
 
 namespace cppbox {
 
-class SimpleLogger : public LoggerInterface, public NonCopyable {
+namespace log {
+
+
+class SimpleLogger : public LoggerInterface, public misc::NonCopyable {
  public:
   SimpleLogger(WriterSptr &writer, FormaterSptr &formater, LogLevel g_level = LogLevel::kINFO);
 
@@ -55,13 +58,16 @@ class SimpleLogger : public LoggerInterface, public NonCopyable {
 
   void Log(LogLevel level, const std::string &msg) override;
 
-
  private:
   WriterSptr   writer_sptr_;
   FormaterSptr formater_sptr_;
 
   LogLevel g_level_;
 };
+
+
+}
+
 
 }
 

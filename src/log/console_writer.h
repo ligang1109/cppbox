@@ -13,7 +13,9 @@
 
 namespace cppbox {
 
-class ConsoleWriter : public WriterInterface, public NonCopyable {
+namespace log {
+
+class ConsoleWriter : public WriterInterface, public misc::NonCopyable {
  public:
   ~ConsoleWriter() override = default;
 
@@ -26,6 +28,10 @@ class ConsoleWriter : public WriterInterface, public NonCopyable {
  private:
   std::mutex mutex_;
 };
+
+
+}
+
 
 }
 

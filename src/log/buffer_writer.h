@@ -15,7 +15,10 @@
 
 namespace cppbox {
 
-class BufferWriter : public WriterInterface, public NonCopyable {
+namespace log {
+
+
+class BufferWriter : public WriterInterface, public misc::NonCopyable {
  public:
   explicit BufferWriter(WriterSptr &writer, size_t size = 4096);
 
@@ -28,13 +31,17 @@ class BufferWriter : public WriterInterface, public NonCopyable {
   ~BufferWriter() override;
 
  private:
-  WriterSptr       writer_sptr_;
-  SimpleBufferUptr buffer_uptr_;
+  WriterSptr             writer_sptr_;
+  misc::SimpleBufferUptr buffer_uptr_;
 
   std::mutex mutex_;
 
   int FlushUnlocked();
 };
+
+
+}
+
 
 }
 
