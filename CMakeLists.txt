@@ -3,6 +3,14 @@ project(cppbox)
 
 set(CMAKE_CXX_STANDARD 11)
 
+set(CXX_FLAGS
+        -Wall
+        -Wextra
+        -Werror
+        -Wconversion
+        -Wshadow
+        )
+
 set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
 set(BUILD_SRC_DIR ${PROJECT_BINARY_DIR}/src)
 
@@ -23,8 +31,9 @@ include_directories(
 
 set(MISC_SRC_DIR ${SRC_DIR}/misc)
 set(LOG_SRC_DIR ${SRC_DIR}/log)
-
+set(NET_SRC_DIR ${SRC_DIR}/net)
 
 
 add_subdirectory(${MISC_SRC_DIR})
 add_subdirectory(${LOG_SRC_DIR})
+add_subdirectory(${NET_SRC_DIR})

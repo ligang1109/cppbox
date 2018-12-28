@@ -101,6 +101,46 @@ using WriterSptr = std::shared_ptr<WriterInterface>;
 using FormaterSptr = std::shared_ptr<FormaterInterface>;
 
 
+class NullLogger : public LoggerInterface {
+ public:
+  void Debug(const std::string &msg) override {}
+
+  void Debug(const std::initializer_list<std::string> &partList) override {}
+
+  void Info(const std::string &msg) override {}
+
+  void Info(const std::initializer_list<std::string> &partList) override {}
+
+  void Notice(const std::string &msg) override {}
+
+  void Notice(const std::initializer_list<std::string> &partList) override {}
+
+  void Warning(const std::string &msg) override {}
+
+  void Warning(const std::initializer_list<std::string> &partList) override {}
+
+  void Error(const std::string &msg) override {}
+
+  void Error(const std::initializer_list<std::string> &partList) override {}
+
+  void Critical(const std::string &msg) override {}
+
+  void Critical(const std::initializer_list<std::string> &partList) override {}
+
+  void Alert(const std::string &msg) override {}
+
+  void Alert(const std::initializer_list<std::string> &partList) override {}
+
+  void Emergency(const std::string &msg) override {}
+
+  void Emergency(const std::initializer_list<std::string> &partList) override {}
+
+  void Log(LogLevel level, const std::initializer_list<std::string> &partList) override {}
+
+  void Log(LogLevel level, const std::string &msg) override {}
+};
+
+
 }
 
 

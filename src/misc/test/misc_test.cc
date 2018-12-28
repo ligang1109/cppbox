@@ -2,7 +2,10 @@
 // Created by ligang on 18-5-11.
 //
 
+#include <sys/time.h>
+
 #include <iostream>
+
 
 #include "gtest/gtest.h"
 
@@ -23,15 +26,6 @@ class MiscTest : public ::testing::Test {
 TEST_F(MiscTest, File) {
   EXPECT_EQ(cppbox::misc::FileExist("/home/ligang/devspace/personal/cppsimple/CMakeLists.txt"), true);
   EXPECT_EQ(cppbox::misc::DirExist("/home/ligang/devspace/personal/cppsimple"), true);
-}
-
-TEST_F(MiscTest, Time) {
-  std::cout << cppbox::misc::FormatTime() << std::endl;
-
-  struct timeval now_time;
-  gettimeofday(&now_time, nullptr);
-
-  std::cout << cppbox::misc::FormatTime(now_time.tv_sec - 86400, "%Y%m%d %H:%M:%S") << std::endl;
 }
 
 class TestMakeUnique {

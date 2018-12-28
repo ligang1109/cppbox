@@ -16,8 +16,8 @@
 class SimpleLoggerTest : public ::testing::Test {
  protected:
   SimpleLoggerTest() {
-    std::string          log_id("abcdefg");
-    std::string          address("127.0.0.1:12345");
+    std::string               log_id("abcdefg");
+    std::string               address("127.0.0.1:12345");
     cppbox::log::FormaterSptr fr = std::make_shared<cppbox::log::SimpleFormater>(log_id, address);
 
     cppbox::log::WriterSptr cw = std::make_shared<cppbox::log::ConsoleWriter>();

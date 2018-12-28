@@ -18,7 +18,7 @@ namespace log {
 
 class SimpleLogger : public LoggerInterface, public misc::NonCopyable {
  public:
-  SimpleLogger(WriterSptr &writer, FormaterSptr &formater, LogLevel g_level = LogLevel::kINFO);
+  explicit SimpleLogger(WriterSptr &writer, const FormaterSptr &formater = nullptr, LogLevel g_level = LogLevel::kINFO);
 
   ~SimpleLogger() override;
 

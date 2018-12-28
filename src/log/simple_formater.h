@@ -7,6 +7,8 @@
 
 #include "base.h"
 
+#include "misc/simple_time.h"
+
 namespace cppbox {
 
 namespace log {
@@ -22,9 +24,9 @@ class SimpleFormater : public FormaterInterface {
   std::string log_id_;
   std::string address_;
 
-  struct timeval last_fmt_time_;
-  time_t         last_fmt_seconds_;
-  std::string    last_fmt_seconds_str_;
+  misc::SimpleTimeUptr last_fmt_time_uptr_;
+  time_t               last_fmt_seconds_;
+  std::string          last_fmt_seconds_str_;
 };
 
 

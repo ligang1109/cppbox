@@ -10,6 +10,7 @@
 #include "base.h"
 
 #include "misc/non_copyable.h"
+#include "misc/simple_time.h"
 
 namespace cppbox {
 
@@ -29,15 +30,15 @@ class FileWriter : public WriterInterface, public misc::NonCopyable {
   int Flush() override;
 
  private:
+  int FlushUnlocked();
+
   const char *path_;
   FILE       *fp_;
 
-  struct timeval now_time_;
-  time_t         last_write_seconds_;
+  misc::SimpleTimeUptr now_time_uptr_;
+  time_t               last_write_seconds_;
 
   std::mutex mutex_;
-
-  int FlushUnlocked();
 };
 
 

@@ -15,27 +15,26 @@ namespace log {
 
 FileWriter::FileWriter(const char *path) :
         path_(path),
-        fp_(fopen(path, "a")) {
-  gettimeofday(&now_time_, nullptr);
-  last_write_seconds_ = now_time_.tv_sec;
-}
+        fp_(::fopen(path, "a")),
+        now_time_uptr_(misc::NowTimeUptr()),
+        last_write_seconds_(now_time_uptr_->Sec()) {}
 
 FileWriter::~FileWriter() {
   if (fp_ != nullptr) {
-    fclose(fp_);
+    ::fclose(fp_);
   }
 }
 
 size_t FileWriter::Write(const char *msg, size_t len) {
   std::lock_guard<std::mutex> lock(mutex_);
 
-  gettimeofday(&now_time_, nullptr);
-  if (last_write_seconds_ != now_time_.tv_sec) {
+  now_time_uptr_->Update();
+  if (last_write_seconds_ != now_time_uptr_->Sec()) {
     if (!misc::FileExist(path_)) {
-      fclose(fp_);
-      fp_ = fopen(path_, "a");
+      ::fclose(fp_);
+      fp_ = ::fopen(path_, "a");
     }
-    last_write_seconds_ = now_time_.tv_sec;
+    last_write_seconds_ = now_time_uptr_->Sec();
   }
 
   return ::fwrite_unlocked(msg, 1, len, fp_);

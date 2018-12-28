@@ -4,6 +4,13 @@
 
 #include "misc.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <sys/time.h>
+#include <fcntl.h>
+
+
 namespace cppbox {
 
 namespace misc {
@@ -12,7 +19,7 @@ namespace misc {
 bool FileExist(const char *path) {
   struct stat statbuf;
 
-  int r = stat(path, &statbuf);
+  int r = ::stat(path, &statbuf);
   if (r != 0) {
     return false;
   }
@@ -23,7 +30,7 @@ bool FileExist(const char *path) {
 bool DirExist(const char *path) {
   struct stat statbuf;
 
-  int r = stat(path, &statbuf);
+  int r = ::stat(path, &statbuf);
   if (r != 0) {
     return false;
   }
@@ -35,25 +42,23 @@ bool DirExist(const char *path) {
   return false;
 }
 
-std::string FormatTime(time_t ts, const char *layout) {
-  if (ts == 0) {
-    struct timeval now_time;
-    gettimeofday(&now_time, nullptr);
-    ts = now_time.tv_sec;
-  }
-  if (layout == nullptr) {
-    layout = kGeneralTimeLayout1;
+
+ErrorUptr SetFdNonBlock(int fd) {
+  int flags;
+  if ((flags = ::fcntl(fd, F_GETFL, NULL)) == -1) {
+    return NewErrorUptrByErrno();
   }
 
-  char      buf[50];
-  struct tm *tmp = localtime(&ts);
-  strftime(buf, sizeof(buf), layout, tmp);
+  if (!(flags & O_NONBLOCK)) {
+    if (::fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
+      return NewErrorUptrByErrno();
+    }
+  }
 
-  return std::string(buf);
+  return nullptr;
 }
 
 
 }
-
 
 }

@@ -4,15 +4,20 @@
 
 #include "simple_logger.h"
 
+#include "simple_formater.h"
+
 
 namespace cppbox {
 
 namespace log {
 
-SimpleLogger::SimpleLogger(WriterSptr &writer, FormaterSptr &formater, LogLevel g_level) :
+SimpleLogger::SimpleLogger(WriterSptr &writer, const FormaterSptr &formater, LogLevel g_level) :
         writer_sptr_(writer),
         formater_sptr_(formater),
         g_level_(g_level) {
+  if (formater_sptr_ == nullptr) {
+    formater_sptr_.reset(new SimpleFormater());
+  }
 }
 
 SimpleLogger::~SimpleLogger() {
