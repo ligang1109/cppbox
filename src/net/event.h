@@ -50,6 +50,12 @@ class Event : public misc::NonCopyable {
 
   void set_error_callback(EventCallback cb);
 
+  void AddEvents(uint32_t events);
+
+  void DelEvents(uint32_t events);
+
+  bool HasEvents(uint32_t events);
+
  protected:
   int      fd_;
   uint32_t events_;

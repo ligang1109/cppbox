@@ -26,8 +26,8 @@ int BufferWriter::Flush() {
 }
 
 int BufferWriter::FlushUnlocked() {
-  if (buffer_uptr_->Used() != 0) {
-    writer_sptr_->Write(buffer_uptr_->Base(), buffer_uptr_->Used());
+  if (buffer_uptr_->Readable() != 0) {
+    writer_sptr_->Write(buffer_uptr_->ReadBegin(), buffer_uptr_->Readable());
     buffer_uptr_->Reset();
   }
 
@@ -37,14 +37,14 @@ int BufferWriter::FlushUnlocked() {
 size_t BufferWriter::Write(const char *msg, size_t len) {
   std::lock_guard<std::mutex> lock(mutex_);
 
-  if (len <= buffer_uptr_->Remain()) {
+  if (len <= buffer_uptr_->Writeable()) {
     buffer_uptr_->Append(msg, len);
 
     return len;
   }
 
   FlushUnlocked();
-  if (len <= buffer_uptr_->Remain()) {
+  if (len <= buffer_uptr_->Writeable()) {
     buffer_uptr_->Append(msg, len);
 
     return len;

@@ -27,7 +27,9 @@ class EventLoop : public misc::NonCopyable {
 
   void UpdateEvent(EventSptr event_sptr);
 
-  void DelEvent(int eventfd);
+  EventSptr GetEvent(int fd);
+
+  void DelEvent(int fd);
 
   void Loop();
 

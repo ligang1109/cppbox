@@ -84,8 +84,6 @@ misc::ErrorUptr BindAndListenForTcpIpV4(int sockfd, const char *ip, uint16_t por
 }
 
 
-int Accept();
-
 
 }
 

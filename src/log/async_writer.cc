@@ -40,7 +40,7 @@ int AsyncWriter::Flush() {
 size_t AsyncWriter::Write(const char *msg, size_t len) {
   std::lock_guard<std::mutex> lock(mutex_);
 
-  if (len <= cur_buffer_uptr_->Remain()) {
+  if (len <= cur_buffer_uptr_->Writeable()) {
     cur_buffer_uptr_->Append(msg, len);
 
     return len;
@@ -53,7 +53,7 @@ size_t AsyncWriter::Write(const char *msg, size_t len) {
     cur_buffer_uptr_.reset(new misc::SimpleBuffer(flush_size_));
   }
 
-  if (len > cur_buffer_uptr_->Remain()) {
+  if (len > cur_buffer_uptr_->Writeable()) {
     return 0;
   }
 
@@ -85,7 +85,7 @@ void AsyncWriter::WriteThreadFunc(int flush_seconds) {
     }
 
     for (const auto &buffer_uptr : buffer_list_to_write) {
-      writer_sptr_->Write(buffer_uptr->Base(), buffer_uptr->Used());
+      writer_sptr_->Write(buffer_uptr->ReadBegin(), buffer_uptr->Readable());
     }
 
     cur_buffer_prepare = std::move(buffer_list_to_write.back());

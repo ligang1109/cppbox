@@ -11,12 +11,12 @@
 
 class AsyncWriterTest : public ::testing::Test {
  protected:
-  AsyncWriterTest() {
+  void SetUp() override {
     cppbox::log::WriterSptr fw = std::make_shared<cppbox::log::FileWriter>("/tmp/cppbox_async_writer_test.log");
     async_writer_ = new cppbox::log::AsyncWriter(fw, 1024);
   }
 
-  ~AsyncWriterTest() override {
+  void TearDown() override {
     delete async_writer_;
   }
 

@@ -9,11 +9,11 @@
 
 class ConsoleWriterTest : public ::testing::Test {
  protected:
-  ConsoleWriterTest() {
+  void SetUp() override {
     writer_ = new cppbox::log::ConsoleWriter();
   }
 
-  ~ConsoleWriterTest() override {
+  void TearDown() override {
     delete writer_;
   }
 

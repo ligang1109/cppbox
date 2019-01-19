@@ -56,6 +56,18 @@ void Event::set_error_callback(EventCallback cb) {
   error_callback_ = std::move(cb);
 }
 
+void Event::AddEvents(uint32_t events) {
+  events_ |= events;
+}
+
+void Event::DelEvents(uint32_t events) {
+  events_ &= ~events;
+}
+
+bool Event::HasEvents(uint32_t events) {
+  return (events_ & events) == events;
+}
+
 
 TimeEvent::~TimeEvent() {
   ::close(fd_);

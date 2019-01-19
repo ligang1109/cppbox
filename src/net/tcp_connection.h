@@ -8,16 +8,34 @@
 #include <string>
 #include <memory>
 
+#include "event_loop.h"
+
 #include "misc/non_copyable.h"
+#include "misc/simple_buffer.h"
+#include "misc/simple_time.h"
 
 namespace cppbox {
 
 namespace net {
 
+enum class ConnectionStatus {
+  kNotset        = 0,
+  kDisconnected  = 1,
+  kConnecting    = 2,
+  kConnected     = 3,
+  kDisconnecting = 4,
+};
 
-class TcpConnection : public misc::NonCopyable {
+
+class TcpConnection;
+
+using TcpConnectionSptr = std::shared_ptr<TcpConnection>;
+using TcpConnCallback = std::function<void(TcpConnectionSptr, misc::SimpleTimeSptr)>;
+
+class TcpConnection : public misc::NonCopyable,
+                      public std::enable_shared_from_this<TcpConnection> {
  public:
-  explicit TcpConnection(int connfd, const char *peer_ip, uint16_t peer_port);
+  explicit TcpConnection(int connfd, const char *peer_ip, uint16_t peer_port, EventLoop *loop_ptr, size_t read_protected_size = 4096);
 
   ~TcpConnection();
 
@@ -27,17 +45,53 @@ class TcpConnection : public misc::NonCopyable {
 
   uint16_t peer_port();
 
-  int Read();
+  ConnectionStatus status();
 
-  int Write();
+  void set_connected_callback(TcpConnCallback cb);
+
+  void set_disconnected_callback(TcpConnCallback cb);
+
+  void set_read_callback(TcpConnCallback cb);
+
+  void set_write_complete_callback(TcpConnCallback cb);
+
+  void set_error_callback(TcpConnCallback cb);
+
+  void ConnectEstablished(misc::SimpleTimeSptr happened_st_sptr = nullptr);
+
+  void GracefulClosed(misc::SimpleTimeSptr happened_st_sptr = nullptr);
+
+  void ForceClosed(misc::SimpleTimeSptr happened_st_sptr = nullptr);
+
+  size_t Receive(char *data, size_t len);
+
+  ssize_t Send(char *data, size_t len);
 
  private:
-  int         connfd_;
-  std::string peer_ip_;
-  uint16_t    peer_port_;
+  void ReadFdCallback(misc::SimpleTimeSptr happened_st_sptr);
+
+  void WriteFdCallback(misc::SimpleTimeSptr happened_st_sptr);
+
+  void EnsureWriteEvents();
+
+  int              connfd_;
+  std::string      peer_ip_;
+  uint16_t         peer_port_;
+  EventLoop        *loop_ptr_;
+  ConnectionStatus status_;
+  EventSptr        rw_event_sptr_;
+  size_t           read_protected_size_;
+
+  misc::SimpleBufferUptr read_buf_uptr_;
+  misc::SimpleBufferUptr write_buf_uptr_;
+
+  TcpConnCallback connected_callback_;
+  TcpConnCallback disconnected_callback_;
+  TcpConnCallback read_callback_;
+  TcpConnCallback write_complete_callback_;
+  TcpConnCallback error_callback_;
 };
 
-using TcpConnectionSptr = std::shared_ptr<TcpConnection>;
 
 }
 

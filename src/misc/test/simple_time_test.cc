@@ -8,10 +8,10 @@
 
 class SimpleTimeTest : public ::testing::Test {
  protected:
-  SimpleTimeTest() {
+  void SetUp() override {
   }
 
-  ~SimpleTimeTest() {
+  void TearDown() override {
   }
 };
 

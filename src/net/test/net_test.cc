@@ -8,10 +8,10 @@
 
 class NetTest : public ::testing::Test {
  protected:
-  NetTest() {
+  void SetUp() override {
   }
 
-  ~NetTest() override {
+  void TearDown() override {
   }
 };
 

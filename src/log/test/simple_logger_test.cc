@@ -15,7 +15,7 @@
 
 class SimpleLoggerTest : public ::testing::Test {
  protected:
-  SimpleLoggerTest() {
+  void SetUp() override {
     std::string               log_id("abcdefg");
     std::string               address("127.0.0.1:12345");
     cppbox::log::FormaterSptr fr = std::make_shared<cppbox::log::SimpleFormater>(log_id, address);
@@ -32,7 +32,7 @@ class SimpleLoggerTest : public ::testing::Test {
     alogger_ = new cppbox::log::SimpleLogger(aw, fr, cppbox::log::LogLevel::kDEBUG);
   }
 
-  ~SimpleLoggerTest() override {
+  void TearDown() override {
     delete clogger_;
     delete flogger_;
     delete alogger_;

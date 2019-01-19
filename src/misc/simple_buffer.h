@@ -15,27 +15,55 @@ namespace cppbox {
 namespace misc {
 
 
+/// +-------------+------------- --+-  -------------+
+/// |             |    readable    |    writable    |
+/// |             |                |                |
+/// +-------------+------------- --+-  -------------+
+/// |             |                |                |
+/// 0         read_index      write_index         size
+
 class SimpleBuffer : public NonCopyable {
  public:
-  explicit SimpleBuffer(size_t size);
+  explicit SimpleBuffer(size_t init_size = 1024, size_t max_size = 0);
 
-  size_t Remain();
+  bool AddReadIndex(size_t len);
+
+  bool AddWriteIndex(size_t len);
+
+  size_t Size();
+
+  size_t Readable();
+
+  size_t Writeable();
+
+  void Reset();
+
+  bool Resize(size_t size);
 
   size_t Append(const char *data, size_t len);
 
   size_t Append(const std::string &data);
 
-  void Reset();
+  char *ReadBegin();
 
-  const char *Base();
+  char *WriteBegin();
 
-  size_t Used();
+  size_t Read(char *data, size_t len);
 
-  std::string ToString();
+  std::string ReadAsString(size_t len);
+
+  std::string ReadAllAsString();
 
  private:
+  void CheckReset();
+
+  bool EnsureWriteSize(size_t write_len);
+
   std::vector<char> buf_;
-  size_t            used_;
+
+  size_t max_size_;
+  size_t read_index_;
+  size_t write_index_;
 };
 
 using SimpleBufferUptr = std::unique_ptr<SimpleBuffer>;

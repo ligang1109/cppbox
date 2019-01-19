@@ -6,7 +6,6 @@
 
 #include <sys/eventfd.h>
 #include <unistd.h>
-#include <iostream>
 
 #include "misc/misc.h"
 
@@ -58,9 +57,17 @@ void EventLoop::UpdateEvent(EventSptr event_sptr) {
   event_map_[event_sptr->fd()] = event_sptr;
 }
 
-void EventLoop::DelEvent(int eventfd) {
-  epoll_uptr_->Del(eventfd, 0);
-  event_map_.erase(eventfd);
+EventSptr EventLoop::GetEvent(int fd) {
+  if (event_map_.find(fd) == event_map_.end()) {
+    return nullptr;
+  }
+
+  return event_map_[fd];
+}
+
+void EventLoop::DelEvent(int fd) {
+  epoll_uptr_->Del(fd, 0);
+  event_map_.erase(fd);
 }
 
 void EventLoop::Loop() {

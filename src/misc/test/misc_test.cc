@@ -13,12 +13,12 @@
 
 class MiscTest : public ::testing::Test {
  protected:
-  MiscTest() {
-
+  void SetUp() override {
+    std::cout << "misc test setup" << std::endl;
   }
 
-  ~MiscTest() {
-
+  void TearDown() override {
+    std::cout << "misc test teardown" << std::endl;
   }
 };
 

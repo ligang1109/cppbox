@@ -10,10 +10,10 @@
 
 class ErrorTest : public ::testing::Test {
  protected:
-  ErrorTest() {
+  void SetUp() override {
   }
 
-  ~ErrorTest() {
+  void TearDown() override {
   }
 };
 
