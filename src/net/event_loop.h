@@ -7,6 +7,7 @@
 
 #include <map>
 #include <atomic>
+#include <mutex>
 
 #include "event.h"
 
@@ -19,7 +20,9 @@ namespace net {
 
 class EventLoop : public misc::NonCopyable {
  public:
-  explicit EventLoop(const log::LoggerSptr &error_logger_sptr = nullptr);
+  using Functor = std::function<void()>;
+
+  explicit EventLoop(const log::LoggerSptr &logger_sptr = nullptr, int timeout_ms = -1);
 
   ~EventLoop();
 
@@ -33,24 +36,31 @@ class EventLoop : public misc::NonCopyable {
 
   void Loop();
 
-  void Wakeup(uint64_t u);
-
   void Quit();
 
+  void AppendFunction(const Functor &func);
+
  private:
-  static const uint64_t kWakeupQuit = 1;
+  void Wakeup();
 
   void WakeupCallback(misc::SimpleTimeSptr happened_st_sptr);
 
   void HandleEvent(Event *event_p, uint32_t ready_events, misc::SimpleTimeSptr st_sptr);
 
-  int       wakeup_fd_;
+  void RunFunctions();
+
+  int wakeup_fd_;
   EpollUptr epoll_uptr_;
 
-  std::atomic<bool>        quit_;
+  std::atomic<bool> quit_;
   std::map<int, EventSptr> event_map_;
 
-  log::LoggerSptr error_logger_sptr_;
+  std::mutex mutex_;
+  std::vector<Functor> function_list_;
+  bool run_functions_;
+
+  log::LoggerSptr logger_sptr_;
+  int timeout_ms_;
 };
 
 using EventLoopUptr = std::unique_ptr<EventLoop>;

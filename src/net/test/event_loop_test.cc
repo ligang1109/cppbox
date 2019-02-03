@@ -36,9 +36,25 @@ void LoopThreadFunc(cppbox::net::EventLoop *event_loop_ptr, const std::string &n
 
 TEST_F(EventLoopTest, Wakeup) {
   std::thread t(LoopThreadFunc, event_loop_ptr_, "wakeup", 0);
-  sleep(2);
+  sleep(1);
 
   std::cout << "wakeup loop" << std::endl;
+  event_loop_ptr_->Quit();
+
+  t.join();
+}
+
+void AppendFunc() {
+  std::cout << "run append func" << std::endl;
+}
+
+TEST_F(EventLoopTest, AppenFunction) {
+  std::thread t(LoopThreadFunc, event_loop_ptr_, "append function", 0);
+  sleep(1);
+
+  for (int i = 0; i < 3; ++i) {
+    event_loop_ptr_->AppendFunction(std::bind(AppendFunc));
+  }
   event_loop_ptr_->Quit();
 
   t.join();
@@ -48,7 +64,7 @@ TEST_F(EventLoopTest, Time) {
   auto event_loop_ptr = event_loop_ptr_;
 
   auto now_st_uptr = cppbox::misc::NowTimeUptr();
-  auto te_sptr     = std::make_shared<cppbox::net::TimeEvent>();
+  auto te_sptr = std::make_shared<cppbox::net::TimeEvent>();
   te_sptr->Init();
 
   time_t interval = 5;
@@ -95,7 +111,7 @@ TEST_F(EventLoopTest, RW) {
   int sockfd = cppbox::net::NewTcpIpV4NonBlockSocket();
   cppbox::net::BindAndListenForTcpIpV4(sockfd, "127.0.0.1", 8860);
 
-  auto sbuf_ptr   = new cppbox::misc::SimpleBuffer(100);
+  auto sbuf_ptr = new cppbox::misc::SimpleBuffer(100);
   auto event_sptr = std::make_shared<cppbox::net::Event>(sockfd);
 
   event_sptr->set_events(cppbox::net::Event::kReadEvents);
@@ -107,7 +123,7 @@ TEST_F(EventLoopTest, RW) {
 
             int connfd = ::accept4(sockfd, (struct sockaddr *) &clientAddr, &clientLen, SOCK_CLOEXEC | SOCK_NONBLOCK);
             getpeername(connfd, (struct sockaddr *) &clientAddr, &clientLen);
-            char     *ip  = inet_ntoa(clientAddr.sin_addr);
+            char *ip = inet_ntoa(clientAddr.sin_addr);
             uint16_t port = ntohs(clientAddr.sin_port);
             std::cout << ip << ":" << port << std::endl;
 

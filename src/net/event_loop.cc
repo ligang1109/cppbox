@@ -14,11 +14,13 @@ namespace cppbox {
 namespace net {
 
 
-EventLoop::EventLoop(const log::LoggerSptr &error_logger_sptr) :
+EventLoop::EventLoop(const log::LoggerSptr &logger_sptr, int timeout_ms) :
         quit_(false),
-        error_logger_sptr_(error_logger_sptr) {
-  if (error_logger_sptr_ == nullptr) {
-    error_logger_sptr_.reset(new log::NullLogger());
+        run_functions_(false),
+        logger_sptr_(logger_sptr),
+        timeout_ms_(timeout_ms) {
+  if (logger_sptr_ == nullptr) {
+    logger_sptr_.reset(new log::NullLogger());
   }
 }
 
@@ -28,7 +30,7 @@ EventLoop::~EventLoop() {
 
 misc::ErrorUptr EventLoop::Init() {
   epoll_uptr_ = misc::MakeUnique<Epoll>();
-  auto eu     = epoll_uptr_->Init();
+  auto eu = epoll_uptr_->Init();
   if (eu != nullptr) {
     return eu;
   }
@@ -76,9 +78,9 @@ void EventLoop::Loop() {
   while (!quit_) {
     Epoll::ReadyList ready_list;
 
-    auto eu = epoll_uptr_->Wait(&ready_list, -1);
+    auto eu = epoll_uptr_->Wait(&ready_list, timeout_ms_);
     if (eu != nullptr) {
-      error_logger_sptr_->Error("epoll wait error: " + eu->String());
+      logger_sptr_->Error("epoll wait error: " + eu->String());
       return;
     }
 
@@ -90,28 +92,35 @@ void EventLoop::Loop() {
         HandleEvent(it->second.get(), ready.second, st_sptr);
       }
     }
+
+    RunFunctions();
   }
 }
 
-void EventLoop::Wakeup(uint64_t u) {
+void EventLoop::Quit() {
+  quit_ = true;
+  Wakeup();
+}
+
+void EventLoop::Wakeup() {
+  uint64_t u = 1;
   ::write(wakeup_fd_, &u, sizeof(uint64_t));
 }
 
-void EventLoop::Quit() {
-  Wakeup(kWakeupQuit);
+void EventLoop::AppendFunction(const Functor &func) {
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    function_list_.push_back(func);
+  }
+
+  if (run_functions_) {
+    Wakeup();
+  }
 }
 
 void EventLoop::WakeupCallback(misc::SimpleTimeSptr happened_st_sptr) {
   uint64_t u;
   ::read(wakeup_fd_, &u, sizeof(uint64_t));
-
-  switch (u) {
-    case kWakeupQuit:
-      quit_ = true;
-      break;
-//    default:
-
-  }
 }
 
 void EventLoop::HandleEvent(Event *event_p, uint32_t ready_events, misc::SimpleTimeSptr st_sptr) {
@@ -136,6 +145,26 @@ void EventLoop::HandleEvent(Event *event_p, uint32_t ready_events, misc::SimpleT
       wcb(st_sptr);
     }
   }
+}
+
+void EventLoop::RunFunctions() {
+  std::vector<Functor> function_list;
+
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (function_list_.empty()) {
+      return;
+    }
+
+    run_functions_ = true;
+    function_list.swap(function_list_);
+  }
+
+  for (auto &func : function_list) {
+    func();
+  }
+
+  run_functions_ = false;
 }
 
 

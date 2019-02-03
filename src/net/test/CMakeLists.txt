@@ -26,3 +26,9 @@ add_executable(net_event_loop_test
         )
 
 target_link_libraries(net_event_loop_test pthread)
+
+add_executable(net_tcp_server_test
+        tcp_server_test.cc
+        )
+
+target_link_libraries(net_tcp_server_test pthread)

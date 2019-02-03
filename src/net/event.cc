@@ -36,24 +36,24 @@ Event::EventCallback Event::read_callback() {
   return read_callback_;
 }
 
-void Event::set_read_callback(EventCallback cb) {
-  read_callback_ = std::move(cb);
+void Event::set_read_callback(const EventCallback &cb) {
+  read_callback_ = cb;
 }
 
 Event::EventCallback Event::write_callback() {
   return write_callback_;
 }
 
-void Event::set_write_callback(EventCallback cb) {
-  write_callback_ = std::move(cb);
+void Event::set_write_callback(const EventCallback &cb) {
+  write_callback_ = cb;
 }
 
 Event::EventCallback Event::error_callback() {
   return error_callback_;
 }
 
-void Event::set_error_callback(EventCallback cb) {
-  error_callback_ = std::move(cb);
+void Event::set_error_callback(const EventCallback &cb) {
+  error_callback_ = cb;
 }
 
 void Event::AddEvents(uint32_t events) {
@@ -86,7 +86,7 @@ misc::ErrorUptr TimeEvent::Init() {
 }
 
 
-void TimeEvent::RunAt(time_t abs_sec, EventCallback cb) {
+void TimeEvent::RunAt(time_t abs_sec, const EventCallback &cb) {
   struct itimerspec new_value;
   memset(&new_value, 0, sizeof(struct itimerspec));
 
@@ -94,10 +94,10 @@ void TimeEvent::RunAt(time_t abs_sec, EventCallback cb) {
 
   ::timerfd_settime(fd_, 0, &new_value, nullptr);
 
-  time_callback_ = std::move(cb);
+  time_callback_ = cb;
 }
 
-void TimeEvent::RunAfter(time_t delay_sec, EventCallback cb) {
+void TimeEvent::RunAfter(time_t delay_sec, const EventCallback &cb) {
   struct itimerspec new_value;
   memset(&new_value, 0, sizeof(struct itimerspec));
 
@@ -105,10 +105,10 @@ void TimeEvent::RunAfter(time_t delay_sec, EventCallback cb) {
 
   ::timerfd_settime(fd_, 0, &new_value, nullptr);
 
-  time_callback_ = std::move(cb);
+  time_callback_ = cb;
 }
 
-void TimeEvent::RunEvery(time_t interval_sec, EventCallback cb) {
+void TimeEvent::RunEvery(time_t interval_sec, const EventCallback &cb) {
   struct itimerspec new_value;
   memset(&new_value, 0, sizeof(struct itimerspec));
 
@@ -117,7 +117,7 @@ void TimeEvent::RunEvery(time_t interval_sec, EventCallback cb) {
 
   ::timerfd_settime(fd_, 0, &new_value, nullptr);
 
-  time_callback_ = std::move(cb);
+  time_callback_ = cb;
 }
 
 void TimeEvent::TimeUpCallback(misc::SimpleTimeSptr happened_st_sptr) {

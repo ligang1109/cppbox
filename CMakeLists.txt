@@ -28,12 +28,11 @@ include_directories(
         ${SRC_DIR}
 )
 
-
 set(MISC_SRC_DIR ${SRC_DIR}/misc)
-set(LOG_SRC_DIR ${SRC_DIR}/log)
-set(NET_SRC_DIR ${SRC_DIR}/net)
-
-
 add_subdirectory(${MISC_SRC_DIR})
+
+set(LOG_SRC_DIR ${SRC_DIR}/log)
 add_subdirectory(${LOG_SRC_DIR})
+
+set(NET_SRC_DIR ${SRC_DIR}/net)
 add_subdirectory(${NET_SRC_DIR})

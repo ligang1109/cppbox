@@ -16,7 +16,7 @@ class NetTest : public ::testing::Test {
 };
 
 TEST_F(NetTest, Misc) {
-  int sockfd = cppbox::net::NewTcpIpV4NonBlockSocket();
+  int sockfd = ::socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
   if (sockfd == -1) {
     std::cout << cppbox::misc::NewErrorUptrByErrno()->String() << std::endl;
     return;
@@ -28,8 +28,20 @@ TEST_F(NetTest, Misc) {
     return;
   }
 
-  std::cout << "You can check tcp status use netstat and so on" << std::endl;
-  sleep(100);
+  cppbox::net::InetAddress raddr;
+
+  int connfd = cppbox::net::Accept(sockfd, raddr);
+  if (connfd == -1) {
+    std::cout << "accept error: "
+              << cppbox::misc::NewErrorUptrByErrno()->String()
+              << std::endl;
+    return;
+  }
+
+  std::cout << "remote ip is " << raddr.ip << std::endl;
+  std::cout << "remote port is " << raddr.port << std::endl;
+
+  ::sleep(10);
 }
 
 int main(int argc, char **argv) {

@@ -40,15 +40,15 @@ class Event : public misc::NonCopyable {
 
   EventCallback read_callback();
 
-  void set_read_callback(EventCallback cb);
+  void set_read_callback(const EventCallback &cb);
 
   EventCallback write_callback();
 
-  void set_write_callback(EventCallback cb);
+  void set_write_callback(const EventCallback &cb);
 
   EventCallback error_callback();
 
-  void set_error_callback(EventCallback cb);
+  void set_error_callback(const EventCallback &cb);
 
   void AddEvents(uint32_t events);
 
@@ -75,11 +75,11 @@ class TimeEvent : public Event {
 
   misc::ErrorUptr Init();
 
-  void RunAt(time_t abs_sec, EventCallback cb);
+  void RunAt(time_t abs_sec, const EventCallback &cb);
 
-  void RunAfter(time_t delay_sec, EventCallback cb);
+  void RunAfter(time_t delay_sec, const EventCallback &cb);
 
-  void RunEvery(time_t interval_sec, EventCallback cb);
+  void RunEvery(time_t interval_sec, const EventCallback &cb);
 
  private:
   void TimeUpCallback(misc::SimpleTimeSptr happened_st_sptr);

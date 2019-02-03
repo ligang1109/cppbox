@@ -12,10 +12,21 @@ namespace cppbox {
 
 namespace net {
 
-TcpConnection::TcpConnection(int connfd, const char *peer_ip, uint16_t peer_port, EventLoop *loop_ptr, size_t read_protected_size) :
+TcpConnection::TcpConnection(int connfd, const char *remote_ip, uint16_t remote_port, EventLoop *loop_ptr, size_t read_protected_size) :
         connfd_(connfd),
-        peer_ip_(peer_ip),
-        peer_port_(peer_port),
+        remote_ip_(remote_ip),
+        remote_port_(remote_port),
+        loop_ptr_(loop_ptr),
+        status_(ConnectionStatus::kNotset),
+        rw_event_sptr_(std::make_shared<Event>(connfd)),
+        read_protected_size_(read_protected_size),
+        read_buf_uptr_(new misc::SimpleBuffer()),
+        write_buf_uptr_(new misc::SimpleBuffer()) {}
+
+TcpConnection::TcpConnection(int connfd, InetAddress &address, EventLoop *loop_ptr, size_t read_protected_size) :
+        connfd_(connfd),
+        remote_ip_(address.ip),
+        remote_port_(address.port),
         loop_ptr_(loop_ptr),
         status_(ConnectionStatus::kNotset),
         rw_event_sptr_(std::make_shared<Event>(connfd)),
@@ -34,36 +45,40 @@ int TcpConnection::connfd() {
   return connfd_;
 }
 
-std::string TcpConnection::peer_ip() {
-  return peer_ip_;
+std::string TcpConnection::remote_ip() {
+  return remote_ip_;
 }
 
-uint16_t TcpConnection::peer_port() {
-  return peer_port_;
+uint16_t TcpConnection::remote_port() {
+  return remote_port_;
+}
+
+EventLoop *TcpConnection::loop_ptr() {
+  return loop_ptr_;
 }
 
 ConnectionStatus TcpConnection::status() {
   return status_;
 }
 
-void TcpConnection::set_connected_callback(TcpConnCallback cb) {
-  connected_callback_ = std::move(cb);
+void TcpConnection::set_connected_callback(const TcpConnCallback &cb) {
+  connected_callback_ = cb;
 }
 
-void TcpConnection::set_disconnected_callback(TcpConnCallback cb) {
-  disconnected_callback_ = std::move(cb);
+void TcpConnection::set_disconnected_callback(const TcpConnCallback &cb) {
+  disconnected_callback_ = cb;
 }
 
-void TcpConnection::set_read_callback(TcpConnCallback cb) {
-  read_callback_ = std::move(cb);
+void TcpConnection::set_read_callback(const TcpConnCallback &cb) {
+  read_callback_ = cb;
 }
 
-void TcpConnection::set_write_complete_callback(TcpConnCallback cb) {
-  write_complete_callback_ = std::move(cb);
+void TcpConnection::set_write_complete_callback(const TcpConnCallback &cb) {
+  write_complete_callback_ = cb;
 }
 
-void TcpConnection::set_error_callback(TcpConnCallback cb) {
-  error_callback_ = std::move(cb);
+void TcpConnection::set_error_callback(const TcpConnCallback &cb) {
+  error_callback_ = cb;
 }
 
 void TcpConnection::ConnectEstablished(misc::SimpleTimeSptr happened_st_sptr) {
@@ -168,9 +183,9 @@ void TcpConnection::ReadFdCallback(misc::SimpleTimeSptr happened_st_sptr) {
 
   struct iovec iov[2];
   iov[0].iov_base = read_buf_uptr_->ReadBegin();
-  iov[0].iov_len  = writeable;
+  iov[0].iov_len = writeable;
   iov[1].iov_base = extrabuf;
-  iov[1].iov_len  = sizeof extrabuf;
+  iov[1].iov_len = sizeof extrabuf;
 
   ssize_t n;
   while (true) {
@@ -213,7 +228,7 @@ void TcpConnection::ReadFdCallback(misc::SimpleTimeSptr happened_st_sptr) {
 }
 
 void TcpConnection::WriteFdCallback(misc::SimpleTimeSptr happened_st_sptr) {
-  auto    readable = write_buf_uptr_->Readable();
+  auto readable = write_buf_uptr_->Readable();
   ssize_t n;
 
   while (true) {

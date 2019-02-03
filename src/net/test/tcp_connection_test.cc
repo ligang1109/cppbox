@@ -5,6 +5,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include <fstream>
+
 #include "gtest/gtest.h"
 
 #include "net/tcp_connection.h"
@@ -31,6 +33,7 @@ class TcpConnectionTest : public ::testing::Test {
   }
 
   void TearDown() override {
+    ::close(listenfd_);
   }
 
   cppbox::net::EventLoopUptr     event_loop_uptr_;
@@ -57,7 +60,7 @@ class TcpConnectionTest : public ::testing::Test {
 
   void ConnectedCallback(cppbox::net::TcpConnectionSptr tcp_conn_sptr, cppbox::misc::SimpleTimeSptr happened_st_sptr) {
     std::cout << "connected" << std::endl;
-    std::cout << tcp_conn_sptr_->peer_ip() << ":" << tcp_conn_sptr_->peer_port() << std::endl;
+    std::cout << tcp_conn_sptr_->remote_ip() << ":" << tcp_conn_sptr_->remote_port() << std::endl;
     std::cout << happened_st_sptr->Format() << std::endl;
 
     event_loop_uptr_->Quit();
@@ -65,14 +68,14 @@ class TcpConnectionTest : public ::testing::Test {
 
   void DisconnectedCallback(cppbox::net::TcpConnectionSptr tcp_conn_sptr, cppbox::misc::SimpleTimeSptr happened_st_sptr) {
     std::cout << "disconnected" << std::endl;
-    std::cout << tcp_conn_sptr_->peer_ip() << ":" << tcp_conn_sptr_->peer_port() << std::endl;
+    std::cout << tcp_conn_sptr_->remote_ip() << ":" << tcp_conn_sptr_->remote_port() << std::endl;
     std::cout << happened_st_sptr->Format() << std::endl;
   }
 
   int listenfd_;
 };
 
-TEST_F(TcpConnectionTest, RW) {
+TEST_F(TcpConnectionTest, Echo) {
   static int write_complete_cnt = 0;
 
   tcp_conn_sptr_->set_read_callback(
@@ -99,6 +102,58 @@ TEST_F(TcpConnectionTest, RW) {
               event_loop_uptr_->Quit();
               return;
             }
+          });
+
+  event_loop_uptr_->Loop();
+}
+
+TEST_F(TcpConnectionTest, File) {
+  tcp_conn_sptr_->set_read_callback(
+          [=](cppbox::net::TcpConnectionSptr tcp_conn_sptr, cppbox::misc::SimpleTimeSptr happened_st_sptr) {
+            char        buf[100];
+            auto        r = tcp_conn_sptr->Receive(buf, sizeof(buf));
+            std::string path(buf, r - 2);
+            if (!cppbox::misc::FileExist(path.c_str())) {
+              std::cout << "file not exist" << std::endl;
+              return;
+            }
+
+            auto wbuf_uptr = cppbox::misc::MakeUnique<cppbox::misc::SimpleBuffer>();
+            auto fp        = ::fopen(path.c_str(), "r");
+            char rbuf[256];
+            bool has_error = false;
+
+            for (auto i = 0; i < 10000; ++i) {
+              if (has_error) {
+                break;
+              }
+
+              ::rewind(fp);
+              while (true) {
+                auto n = ::fread(rbuf, 1, sizeof(rbuf), fp);
+                if (n == 0) {
+                  std::cout << "read eof" << std::endl;
+                  break;
+                } else if (n < 0) {
+                  std::cout << "read error: " << cppbox::misc::NewErrorUptrByErrno()->String() << std::endl;
+                  has_error = true;
+                  break;
+                } else {
+                  wbuf_uptr->Append(rbuf, n);
+                }
+              }
+            }
+
+            ::fclose(fp);
+
+            std::cout << "readable " << wbuf_uptr->Readable() << std::endl;
+            tcp_conn_sptr->Send(wbuf_uptr->ReadBegin(), wbuf_uptr->Readable());
+          });
+
+  tcp_conn_sptr_->set_write_complete_callback(
+          [=](cppbox::net::TcpConnectionSptr tcp_conn_sptr, cppbox::misc::SimpleTimeSptr happened_st_sptr) {
+            std::cout << "write complete" << std::endl;
+            event_loop_uptr_->Quit();
           });
 
   event_loop_uptr_->Loop();

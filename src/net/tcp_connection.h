@@ -9,6 +9,7 @@
 #include <memory>
 
 #include "event_loop.h"
+#include "net.h"
 
 #include "misc/non_copyable.h"
 #include "misc/simple_buffer.h"
@@ -19,10 +20,10 @@ namespace cppbox {
 namespace net {
 
 enum class ConnectionStatus {
-  kNotset        = 0,
-  kDisconnected  = 1,
-  kConnecting    = 2,
-  kConnected     = 3,
+  kNotset = 0,
+  kDisconnected = 1,
+  kConnecting = 2,
+  kConnected = 3,
   kDisconnecting = 4,
 };
 
@@ -35,27 +36,31 @@ using TcpConnCallback = std::function<void(TcpConnectionSptr, misc::SimpleTimeSp
 class TcpConnection : public misc::NonCopyable,
                       public std::enable_shared_from_this<TcpConnection> {
  public:
-  explicit TcpConnection(int connfd, const char *peer_ip, uint16_t peer_port, EventLoop *loop_ptr, size_t read_protected_size = 4096);
+  explicit TcpConnection(int connfd, const char *remote_ip, uint16_t remote_port, EventLoop *loop_ptr, size_t read_protected_size = 4096);
+
+  explicit TcpConnection(int connfd, InetAddress &address, EventLoop *loop_ptr, size_t read_protected_size = 4096);
 
   ~TcpConnection();
 
   int connfd();
 
-  std::string peer_ip();
+  std::string remote_ip();
 
-  uint16_t peer_port();
+  uint16_t remote_port();
+
+  EventLoop *loop_ptr();
 
   ConnectionStatus status();
 
-  void set_connected_callback(TcpConnCallback cb);
+  void set_connected_callback(const TcpConnCallback &cb);
 
-  void set_disconnected_callback(TcpConnCallback cb);
+  void set_disconnected_callback(const TcpConnCallback &cb);
 
-  void set_read_callback(TcpConnCallback cb);
+  void set_read_callback(const TcpConnCallback &cb);
 
-  void set_write_complete_callback(TcpConnCallback cb);
+  void set_write_complete_callback(const TcpConnCallback &cb);
 
-  void set_error_callback(TcpConnCallback cb);
+  void set_error_callback(const TcpConnCallback &cb);
 
   void ConnectEstablished(misc::SimpleTimeSptr happened_st_sptr = nullptr);
 
@@ -74,13 +79,13 @@ class TcpConnection : public misc::NonCopyable,
 
   void EnsureWriteEvents();
 
-  int              connfd_;
-  std::string      peer_ip_;
-  uint16_t         peer_port_;
-  EventLoop        *loop_ptr_;
+  int connfd_;
+  std::string remote_ip_;
+  uint16_t remote_port_;
+  EventLoop *loop_ptr_;
   ConnectionStatus status_;
-  EventSptr        rw_event_sptr_;
-  size_t           read_protected_size_;
+  EventSptr rw_event_sptr_;
+  size_t read_protected_size_;
 
   misc::SimpleBufferUptr read_buf_uptr_;
   misc::SimpleBufferUptr write_buf_uptr_;

@@ -83,6 +83,27 @@ misc::ErrorUptr BindAndListenForTcpIpV4(int sockfd, const char *ip, uint16_t por
   return nullptr;
 }
 
+int Accept(int listenfd, struct InetAddress &address, int flags) {
+  struct sockaddr_in clientAddr;
+  memset(&clientAddr, 0, sizeof(struct sockaddr_in));
+  socklen_t clientLen = sizeof(struct sockaddr);
+
+  int connfd = ::accept4(listenfd, (struct sockaddr *) &clientAddr, &clientLen, flags);
+  if (connfd == -1) {
+    return -1;
+  }
+
+  char ip[INET_ADDRSTRLEN];
+  if (inet_ntop(AF_INET, &clientAddr.sin_addr, ip, INET_ADDRSTRLEN) == nullptr) {
+    ::close(connfd);
+    return -1;
+  }
+
+  address.ip   = ip;
+  address.port = ntohs(clientAddr.sin_port);
+
+  return connfd;
+}
 
 
 }
