@@ -36,7 +36,7 @@ class TcpConnectionTest : public ::testing::Test {
     ::close(listenfd_);
   }
 
-  cppbox::net::EventLoopUptr     event_loop_uptr_;
+  cppbox::net::EventLoopUptr event_loop_uptr_;
   cppbox::net::TcpConnectionSptr tcp_conn_sptr_;
 
  private:
@@ -45,10 +45,10 @@ class TcpConnectionTest : public ::testing::Test {
     memset(&clientAddr, 0, sizeof(struct sockaddr_in));
     socklen_t clientLen = sizeof(struct sockaddr);
 
-    int connfd    = ::accept4(listenfd_, (struct sockaddr *) &clientAddr, &clientLen, SOCK_CLOEXEC | SOCK_NONBLOCK);
+    int connfd = ::accept4(listenfd_, (struct sockaddr *) &clientAddr, &clientLen, SOCK_CLOEXEC | SOCK_NONBLOCK);
     EXPECT_TRUE(connfd > 0);
 
-    char     ip[INET_ADDRSTRLEN];
+    char ip[INET_ADDRSTRLEN];
     EXPECT_TRUE(inet_ntop(AF_INET, &clientAddr.sin_addr, ip, INET_ADDRSTRLEN) != nullptr);
     uint16_t port = ntohs(clientAddr.sin_port);
 
@@ -80,6 +80,9 @@ TEST_F(TcpConnectionTest, Echo) {
 
   tcp_conn_sptr_->set_read_callback(
           [=](cppbox::net::TcpConnectionSptr tcp_conn_sptr, cppbox::misc::SimpleTimeSptr happened_st_sptr) {
+            std::cout << "connected time is " << tcp_conn_sptr->connected_time_sptr()->Format() << std::endl;
+            std::cout << "last receive time is " << tcp_conn_sptr->last_receive_time_sptr()->Format() << std::endl;
+
             char buf[100];
             auto r = tcp_conn_sptr->Receive(buf, sizeof(buf));
             if (r > 0) {
@@ -110,8 +113,8 @@ TEST_F(TcpConnectionTest, Echo) {
 TEST_F(TcpConnectionTest, File) {
   tcp_conn_sptr_->set_read_callback(
           [=](cppbox::net::TcpConnectionSptr tcp_conn_sptr, cppbox::misc::SimpleTimeSptr happened_st_sptr) {
-            char        buf[100];
-            auto        r = tcp_conn_sptr->Receive(buf, sizeof(buf));
+            char buf[100];
+            auto r = tcp_conn_sptr->Receive(buf, sizeof(buf));
             std::string path(buf, r - 2);
             if (!cppbox::misc::FileExist(path.c_str())) {
               std::cout << "file not exist" << std::endl;
@@ -119,7 +122,7 @@ TEST_F(TcpConnectionTest, File) {
             }
 
             auto wbuf_uptr = cppbox::misc::MakeUnique<cppbox::misc::SimpleBuffer>();
-            auto fp        = ::fopen(path.c_str(), "r");
+            auto fp = ::fopen(path.c_str(), "r");
             char rbuf[256];
             bool has_error = false;
 

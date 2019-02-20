@@ -61,6 +61,14 @@ ConnectionStatus TcpConnection::status() {
   return status_;
 }
 
+misc::SimpleTimeSptr TcpConnection::connected_time_sptr() {
+  return connected_time_sptr_;
+}
+
+misc::SimpleTimeSptr TcpConnection::last_receive_time_sptr() {
+  return last_receive_time_sptr_;
+}
+
 void TcpConnection::set_connected_callback(const TcpConnCallback &cb) {
   connected_callback_ = cb;
 }
@@ -82,16 +90,18 @@ void TcpConnection::set_error_callback(const TcpConnCallback &cb) {
 }
 
 void TcpConnection::ConnectEstablished(misc::SimpleTimeSptr happened_st_sptr) {
+  if (happened_st_sptr == nullptr) {
+    happened_st_sptr = misc::NowTimeSptr();
+  }
+  
   status_ = ConnectionStatus::kConnected;
+  connected_time_sptr_ = happened_st_sptr;
 
   rw_event_sptr_->set_events(Event::kReadEvents);
   rw_event_sptr_->set_read_callback(std::bind(&TcpConnection::ReadFdCallback, this, std::placeholders::_1));
   loop_ptr_->UpdateEvent(rw_event_sptr_);
 
   if (connected_callback_) {
-    if (happened_st_sptr == nullptr) {
-      happened_st_sptr = misc::NowTimeSptr();
-    }
     connected_callback_(shared_from_this(), happened_st_sptr);
   }
 }
@@ -214,6 +224,8 @@ void TcpConnection::ReadFdCallback(misc::SimpleTimeSptr happened_st_sptr) {
     }
     break;
   }
+
+  last_receive_time_sptr_ = happened_st_sptr;
 
   if (n <= writeable) {
     read_buf_uptr_->AddWriteIndex(static_cast<size_t>(n));

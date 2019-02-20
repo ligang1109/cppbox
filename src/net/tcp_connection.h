@@ -52,6 +52,10 @@ class TcpConnection : public misc::NonCopyable,
 
   ConnectionStatus status();
 
+  misc::SimpleTimeSptr connected_time_sptr();
+
+  misc::SimpleTimeSptr last_receive_time_sptr();
+
   void set_connected_callback(const TcpConnCallback &cb);
 
   void set_disconnected_callback(const TcpConnCallback &cb);
@@ -89,6 +93,9 @@ class TcpConnection : public misc::NonCopyable,
 
   misc::SimpleBufferUptr read_buf_uptr_;
   misc::SimpleBufferUptr write_buf_uptr_;
+
+  misc::SimpleTimeSptr connected_time_sptr_;
+  misc::SimpleTimeSptr last_receive_time_sptr_;
 
   TcpConnCallback connected_callback_;
   TcpConnCallback disconnected_callback_;

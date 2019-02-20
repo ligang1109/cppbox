@@ -22,7 +22,7 @@ class Event : public misc::NonCopyable {
  public:
   using EventCallback = std::function<void(misc::SimpleTimeSptr)>;
 
-  static const uint32_t kReadEvents  = EPOLLIN | EPOLLPRI;
+  static const uint32_t kReadEvents = EPOLLIN | EPOLLPRI;
   static const uint32_t kWriteEvents = EPOLLOUT;
   static const uint32_t kErrorEvents = EPOLLERR;
 
@@ -57,7 +57,7 @@ class Event : public misc::NonCopyable {
   bool HasEvents(uint32_t events);
 
  protected:
-  int      fd_;
+  int fd_;
   uint32_t events_;
 
   EventCallback read_callback_;
@@ -86,6 +86,9 @@ class TimeEvent : public Event {
 
   EventCallback time_callback_;
 };
+
+using TimeEventUptr = std::unique_ptr<TimeEvent>;
+using TimeEventSptr = std::shared_ptr<TimeEvent>;
 
 
 }

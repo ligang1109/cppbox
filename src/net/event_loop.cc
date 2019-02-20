@@ -16,7 +16,7 @@ namespace net {
 
 EventLoop::EventLoop(const log::LoggerSptr &logger_sptr, int timeout_ms) :
         quit_(false),
-        run_functions_(false),
+        handling_events_(false),
         logger_sptr_(logger_sptr),
         timeout_ms_(timeout_ms) {
   if (logger_sptr_ == nullptr) {
@@ -86,12 +86,14 @@ void EventLoop::Loop() {
 
     auto st_sptr = misc::NowTimeSptr();
 
+    handling_events_ = true;
     for (auto &ready :ready_list) {
       auto it = event_map_.find(ready.first);
       if (it != event_map_.end()) {
         HandleEvent(it->second.get(), ready.second, st_sptr);
       }
     }
+    handling_events_ = false;
 
     RunFunctions();
   }
@@ -113,7 +115,7 @@ void EventLoop::AppendFunction(const Functor &func) {
     function_list_.push_back(func);
   }
 
-  if (run_functions_) {
+  if (!handling_events_) {
     Wakeup();
   }
 }
@@ -156,15 +158,12 @@ void EventLoop::RunFunctions() {
       return;
     }
 
-    run_functions_ = true;
     function_list.swap(function_list_);
   }
 
   for (auto &func : function_list) {
     func();
   }
-
-  run_functions_ = false;
 }
 
 

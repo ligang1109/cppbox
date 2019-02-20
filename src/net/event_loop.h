@@ -57,7 +57,7 @@ class EventLoop : public misc::NonCopyable {
 
   std::mutex mutex_;
   std::vector<Functor> function_list_;
-  bool run_functions_;
+  bool handling_events_;
 
   log::LoggerSptr logger_sptr_;
   int timeout_ms_;
