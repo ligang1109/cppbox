@@ -38,3 +38,12 @@ add_executable(log_async_writer_test
         )
 
 target_link_libraries(log_async_writer_test pthread)
+
+install(TARGETS
+        log_simple_logger_test
+        log_file_writer_test
+        log_console_writer_test
+        log_buffer_writer_test
+        log_simple_formater_test
+        log_async_writer_test
+        RUNTIME DESTINATION test/log)

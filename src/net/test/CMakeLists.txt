@@ -32,3 +32,11 @@ add_executable(net_tcp_server_test
         )
 
 target_link_libraries(net_tcp_server_test pthread)
+
+install(TARGETS
+        net_test
+        net_tcp_connection_test
+        net_epoll_test
+        net_event_loop_test
+        net_tcp_server_test
+        RUNTIME DESTINATION test/net)

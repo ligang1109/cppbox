@@ -25,3 +25,10 @@ add_executable(misc_simple_time_test
         )
 
 target_link_libraries(misc_simple_time_test pthread)
+
+install(TARGETS
+        misc_test
+        misc_simple_buffer_test
+        misc_error_test
+        misc_simple_time_test
+        RUNTIME DESTINATION test/misc)
