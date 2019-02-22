@@ -146,7 +146,7 @@ misc::ErrorUptr TcpServer::ListenAndServe() {
   return nullptr;
 }
 
-void TcpServer::ListenCallback(misc::SimpleTimeSptr happened_st_sptr) {
+void TcpServer::ListenCallback(const misc::SimpleTimeSptr &happened_st_sptr) {
   InetAddress raddr;
 
   int connfd;
@@ -168,7 +168,7 @@ void TcpServer::ListenCallback(misc::SimpleTimeSptr happened_st_sptr) {
   dispatch_index_ = (dispatch_index_ + 1) % conn_thread_list_.size();
 }
 
-TcpConnectionSptr TcpServer::DefaultNewConnection(int connfd, cppbox::net::InetAddress &remote_addr, EventLoop *loop_ptr) {
+TcpConnectionSptr TcpServer::DefaultNewConnection(int connfd, const cppbox::net::InetAddress &remote_addr, EventLoop *loop_ptr) {
   return std::make_shared<TcpConnection>(connfd, remote_addr, loop_ptr);
 }
 
@@ -203,7 +203,7 @@ void TcpServer::ConnectionThread::Start() {
                                     ));
 }
 
-void TcpServer::ConnectionThread::AddConnection(int connfd, InetAddress &remote_addr, misc::SimpleTimeSptr happened_st_sptr) {
+void TcpServer::ConnectionThread::AddConnection(int connfd, const InetAddress &remote_addr, const misc::SimpleTimeSptr &happened_st_sptr) {
   loop_uptr_->AppendFunction(
           std::bind(&TcpServer::ConnectionThread::AddConnectionInThread, this, connfd, remote_addr, happened_st_sptr)
                             );
@@ -238,7 +238,7 @@ void TcpServer::ConnectionThread::ThreadFunc() {
   loop_uptr_->Loop();
 }
 
-void TcpServer::ConnectionThread::AddConnectionInThread(int connfd, InetAddress &remote_addr, misc::SimpleTimeSptr happened_st_sptr) {
+void TcpServer::ConnectionThread::AddConnectionInThread(int connfd, const InetAddress &remote_addr, const misc::SimpleTimeSptr &happened_st_sptr) {
   auto tcp_conn_sptr = server_ptr_->new_conn_func_(connfd, remote_addr, loop_uptr_.get());
 
   if (server_ptr_->connected_callback_ != nullptr) {
@@ -265,7 +265,7 @@ void TcpServer::ConnectionThread::AddConnectionInThread(int connfd, InetAddress 
   tcp_conn_sptr->ConnectEstablished();
 }
 
-void TcpServer::ConnectionThread::DisconnectedCallback(TcpConnectionSptr tcp_conn_sptr, misc::SimpleTimeSptr happened_st_sptr) {
+void TcpServer::ConnectionThread::DisconnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr) {
   conn_map_.erase(tcp_conn_sptr->connfd());
 
   if (server_ptr_->disconnected_callback_ != nullptr) {

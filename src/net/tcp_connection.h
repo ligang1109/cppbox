@@ -31,14 +31,12 @@ enum class ConnectionStatus {
 class TcpConnection;
 
 using TcpConnectionSptr = std::shared_ptr<TcpConnection>;
-using TcpConnCallback = std::function<void(TcpConnectionSptr, misc::SimpleTimeSptr)>;
+using TcpConnCallback = std::function<void(const TcpConnectionSptr &, const misc::SimpleTimeSptr &)>;
 
 class TcpConnection : public misc::NonCopyable,
                       public std::enable_shared_from_this<TcpConnection> {
  public:
-  explicit TcpConnection(int connfd, const char *remote_ip, uint16_t remote_port, EventLoop *loop_ptr, size_t read_protected_size = 4096);
-
-  explicit TcpConnection(int connfd, InetAddress &address, EventLoop *loop_ptr, size_t read_protected_size = 4096);
+  explicit TcpConnection(int connfd, const InetAddress &address, EventLoop *loop_ptr, size_t read_protected_size = 4096);
 
   ~TcpConnection();
 
@@ -66,20 +64,20 @@ class TcpConnection : public misc::NonCopyable,
 
   void set_error_callback(const TcpConnCallback &cb);
 
-  void ConnectEstablished(misc::SimpleTimeSptr happened_st_sptr = nullptr);
+  void ConnectEstablished(const misc::SimpleTimeSptr &happened_st_sptr = nullptr);
 
-  void GracefulClosed(misc::SimpleTimeSptr happened_st_sptr = nullptr);
+  void GracefulClosed(const misc::SimpleTimeSptr &happened_st_sptr = nullptr);
 
-  void ForceClosed(misc::SimpleTimeSptr happened_st_sptr = nullptr);
+  void ForceClosed(const misc::SimpleTimeSptr &happened_st_sptr = nullptr);
 
   size_t Receive(char *data, size_t len);
 
   ssize_t Send(char *data, size_t len);
 
  private:
-  void ReadFdCallback(misc::SimpleTimeSptr happened_st_sptr);
+  void ReadFdCallback(const misc::SimpleTimeSptr &happened_st_sptr);
 
-  void WriteFdCallback(misc::SimpleTimeSptr happened_st_sptr);
+  void WriteFdCallback(const misc::SimpleTimeSptr &happened_st_sptr);
 
   void EnsureWriteEvents();
 

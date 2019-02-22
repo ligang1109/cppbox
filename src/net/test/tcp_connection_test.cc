@@ -40,25 +40,17 @@ class TcpConnectionTest : public ::testing::Test {
   cppbox::net::TcpConnectionSptr tcp_conn_sptr_;
 
  private:
-  void ListenCallback(cppbox::misc::SimpleTimeSptr happened_st_sptr) {
-    struct sockaddr_in clientAddr;
-    memset(&clientAddr, 0, sizeof(struct sockaddr_in));
-    socklen_t clientLen = sizeof(struct sockaddr);
+  void ListenCallback(const cppbox::misc::SimpleTimeSptr &happened_st_sptr) {
+    cppbox::net::InetAddress raddr;
+    int connfd = Accept(listenfd_, raddr);
 
-    int connfd = ::accept4(listenfd_, (struct sockaddr *) &clientAddr, &clientLen, SOCK_CLOEXEC | SOCK_NONBLOCK);
-    EXPECT_TRUE(connfd > 0);
-
-    char ip[INET_ADDRSTRLEN];
-    EXPECT_TRUE(inet_ntop(AF_INET, &clientAddr.sin_addr, ip, INET_ADDRSTRLEN) != nullptr);
-    uint16_t port = ntohs(clientAddr.sin_port);
-
-    tcp_conn_sptr_ = std::make_shared<cppbox::net::TcpConnection>(connfd, ip, port, event_loop_uptr_.get());
+    tcp_conn_sptr_ = std::make_shared<cppbox::net::TcpConnection>(connfd, raddr, event_loop_uptr_.get());
     tcp_conn_sptr_->set_connected_callback(std::bind(&TcpConnectionTest::ConnectedCallback, this, std::placeholders::_1, std::placeholders::_2));
     tcp_conn_sptr_->set_disconnected_callback(std::bind(&TcpConnectionTest::DisconnectedCallback, this, std::placeholders::_1, std::placeholders::_2));
     tcp_conn_sptr_->ConnectEstablished(happened_st_sptr);
   }
 
-  void ConnectedCallback(cppbox::net::TcpConnectionSptr tcp_conn_sptr, cppbox::misc::SimpleTimeSptr happened_st_sptr) {
+  void ConnectedCallback(const cppbox::net::TcpConnectionSptr &tcp_conn_sptr, const cppbox::misc::SimpleTimeSptr &happened_st_sptr) {
     std::cout << "connected" << std::endl;
     std::cout << tcp_conn_sptr_->remote_ip() << ":" << tcp_conn_sptr_->remote_port() << std::endl;
     std::cout << happened_st_sptr->Format() << std::endl;
@@ -66,7 +58,7 @@ class TcpConnectionTest : public ::testing::Test {
     event_loop_uptr_->Quit();
   }
 
-  void DisconnectedCallback(cppbox::net::TcpConnectionSptr tcp_conn_sptr, cppbox::misc::SimpleTimeSptr happened_st_sptr) {
+  void DisconnectedCallback(const cppbox::net::TcpConnectionSptr &tcp_conn_sptr, const cppbox::misc::SimpleTimeSptr &happened_st_sptr) {
     std::cout << "disconnected" << std::endl;
     std::cout << tcp_conn_sptr_->remote_ip() << ":" << tcp_conn_sptr_->remote_port() << std::endl;
     std::cout << happened_st_sptr->Format() << std::endl;

@@ -43,9 +43,9 @@ class EventLoop : public misc::NonCopyable {
  private:
   void Wakeup();
 
-  void WakeupCallback(misc::SimpleTimeSptr happened_st_sptr);
+  void WakeupCallback(const misc::SimpleTimeSptr &happened_st_sptr);
 
-  void HandleEvent(Event *event_p, uint32_t ready_events, misc::SimpleTimeSptr st_sptr);
+  void HandleEvent(Event *event_p, uint32_t ready_events, const misc::SimpleTimeSptr &happened_st_sptr);
 
   void RunFunctions();
 

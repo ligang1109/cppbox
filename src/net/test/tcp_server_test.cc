@@ -19,7 +19,7 @@ class TcpServerTest : public ::testing::Test {
 
 class MyTcpConnection : public cppbox::net::TcpConnection {
  public:
-  explicit MyTcpConnection(int connfd, cppbox::net::InetAddress &remote_addr, cppbox::net::EventLoop *loop_ptr, const std::string &msg) :
+  explicit MyTcpConnection(int connfd, const cppbox::net::InetAddress &remote_addr, cppbox::net::EventLoop *loop_ptr, const std::string &msg) :
           cppbox::net::TcpConnection(connfd, remote_addr, loop_ptr),
           msg_(msg) {}
 
@@ -67,32 +67,32 @@ class EchoServer {
                     std::placeholders::_2));
 
     server_uptr_->RunEveryTimeInConnectionThread(5,
-                                                 std::bind(&EchoServer::RunEveryTime, this,
+                                                 std::bind(&EchoServer::RunEveryTimeCallback, this,
                                                            std::placeholders::_1));
 
     server_uptr_->Start();
   }
 
  private:
-  MyTcpConnectionSptr NewConnection(int connfd, cppbox::net::InetAddress &remote_addr, cppbox::net::EventLoop *loop_ptr) {
+  MyTcpConnectionSptr NewConnection(int connfd, const cppbox::net::InetAddress &remote_addr, cppbox::net::EventLoop *loop_ptr) {
     return std::make_shared<MyTcpConnection>(connfd, remote_addr, loop_ptr, "new my tcp connection from echo server");
   }
 
-  void ConnectedCallback(cppbox::net::TcpConnectionSptr tcp_conn_sptr, cppbox::misc::SimpleTimeSptr happened_st_sptr) {
+  void ConnectedCallback(const cppbox::net::TcpConnectionSptr &tcp_conn_sptr, const cppbox::misc::SimpleTimeSptr &happened_st_sptr) {
     std::cout << "connected in thread " << cppbox::net::TcpConnectionThreadId() << std::endl;
     std::cout << "client ip " << tcp_conn_sptr->remote_ip() << std::endl;
     std::cout << "client port " << tcp_conn_sptr->remote_port() << std::endl;
     std::cout << "connected time " << happened_st_sptr->Format() << std::endl;
   }
 
-  void DisconnectedCallback(cppbox::net::TcpConnectionSptr tcp_conn_sptr, cppbox::misc::SimpleTimeSptr happened_st_sptr) {
+  void DisconnectedCallback(const cppbox::net::TcpConnectionSptr &tcp_conn_sptr, const cppbox::misc::SimpleTimeSptr &happened_st_sptr) {
     std::cout << "disconnected in thread " << cppbox::net::TcpConnectionThreadId() << std::endl;
     std::cout << "client ip " << tcp_conn_sptr->remote_ip() << std::endl;
     std::cout << "client port " << tcp_conn_sptr->remote_port() << std::endl;
     std::cout << "discnnected time " << happened_st_sptr->Format() << std::endl;
   }
 
-  void ReadCallback(cppbox::net::TcpConnectionSptr tcp_conn_sptr, cppbox::misc::SimpleTimeSptr happened_st_sptr) {
+  void ReadCallback(const cppbox::net::TcpConnectionSptr &tcp_conn_sptr, const cppbox::misc::SimpleTimeSptr &happened_st_sptr) {
     auto my_conn_sptr = std::static_pointer_cast<MyTcpConnection>(tcp_conn_sptr);
 
     std::cout << "in thread " << cppbox::net::TcpConnectionThreadId() << std::endl;
@@ -106,7 +106,7 @@ class EchoServer {
     my_conn_sptr->Send(buf, n);
   }
 
-  void RunEveryTime(cppbox::misc::SimpleTimeSptr happened_st_sptr) {
+  void RunEveryTimeCallback(const cppbox::misc::SimpleTimeSptr &happened_st_sptr) {
     std::cout << "run every time in thread " << cppbox::net::TcpConnectionThreadId()
               << " at time " << happened_st_sptr->Format() << std::endl;
   }

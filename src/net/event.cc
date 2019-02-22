@@ -79,7 +79,7 @@ misc::ErrorUptr TimeEvent::Init() {
     return misc::NewErrorUptrByErrno();
   }
 
-  events_        = kReadEvents;
+  events_ = kReadEvents;
   read_callback_ = std::bind(&TimeEvent::TimeUpCallback, this, std::placeholders::_1);
 
   return nullptr;
@@ -113,14 +113,14 @@ void TimeEvent::RunEvery(time_t interval_sec, const EventCallback &cb) {
   memset(&new_value, 0, sizeof(struct itimerspec));
 
   new_value.it_interval.tv_sec = interval_sec;
-  new_value.it_value.tv_sec    = interval_sec;
+  new_value.it_value.tv_sec = interval_sec;
 
   ::timerfd_settime(fd_, 0, &new_value, nullptr);
 
   time_callback_ = cb;
 }
 
-void TimeEvent::TimeUpCallback(misc::SimpleTimeSptr happened_st_sptr) {
+void TimeEvent::TimeUpCallback(const misc::SimpleTimeSptr &happened_st_sptr) {
   uint64_t u;
   ::read(fd_, &u, sizeof(uint64_t));
 

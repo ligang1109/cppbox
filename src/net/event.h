@@ -20,7 +20,7 @@ namespace net {
 
 class Event : public misc::NonCopyable {
  public:
-  using EventCallback = std::function<void(misc::SimpleTimeSptr)>;
+  using EventCallback = std::function<void(const misc::SimpleTimeSptr &)>;
 
   static const uint32_t kReadEvents = EPOLLIN | EPOLLPRI;
   static const uint32_t kWriteEvents = EPOLLOUT;
@@ -82,7 +82,7 @@ class TimeEvent : public Event {
   void RunEvery(time_t interval_sec, const EventCallback &cb);
 
  private:
-  void TimeUpCallback(misc::SimpleTimeSptr happened_st_sptr);
+  void TimeUpCallback(const misc::SimpleTimeSptr &happened_st_sptr);
 
   EventCallback time_callback_;
 };

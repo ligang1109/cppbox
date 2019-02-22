@@ -120,16 +120,16 @@ void EventLoop::AppendFunction(const Functor &func) {
   }
 }
 
-void EventLoop::WakeupCallback(misc::SimpleTimeSptr happened_st_sptr) {
+void EventLoop::WakeupCallback(const misc::SimpleTimeSptr &happened_st_sptr) {
   uint64_t u;
   ::read(wakeup_fd_, &u, sizeof(uint64_t));
 }
 
-void EventLoop::HandleEvent(Event *event_p, uint32_t ready_events, misc::SimpleTimeSptr st_sptr) {
+void EventLoop::HandleEvent(Event *event_p, uint32_t ready_events, const misc::SimpleTimeSptr &happened_st_sptr) {
   if (ready_events & Event::kErrorEvents) {
     auto ecb = event_p->error_callback();
     if (ecb) {
-      ecb(st_sptr);
+      ecb(happened_st_sptr);
       return;
     }
   }
@@ -137,14 +137,14 @@ void EventLoop::HandleEvent(Event *event_p, uint32_t ready_events, misc::SimpleT
   if (ready_events & Event::kReadEvents) {
     auto rcb = event_p->read_callback();
     if (rcb) {
-      rcb(st_sptr);
+      rcb(happened_st_sptr);
     }
   }
 
   if (ready_events & Event::kWriteEvents) {
     auto wcb = event_p->write_callback();
     if (wcb) {
-      wcb(st_sptr);
+      wcb(happened_st_sptr);
     }
   }
 }
