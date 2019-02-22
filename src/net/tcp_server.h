@@ -21,7 +21,7 @@ class TcpServer : public misc::NonCopyable {
  public:
   using NewConnectionFunc = std::function<TcpConnectionSptr(int, const InetAddress &, EventLoop *)>;
 
-  explicit TcpServer(uint16_t port, const log::LoggerSptr &logger_sptr = nullptr, const char *ip = "127.0.0.1");
+  explicit TcpServer(uint16_t port, const log::LoggerSptr &logger_sptr = nullptr, const std::string &ip = "127.0.0.1");
 
   void set_new_conn_func(const NewConnectionFunc &func);
 

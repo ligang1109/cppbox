@@ -18,7 +18,7 @@ int TcpConnectionThreadId() {
   return tcp_conn_thread_id;
 }
 
-TcpServer::TcpServer(uint16_t port, const log::LoggerSptr &logger_sptr, const char *ip) :
+TcpServer::TcpServer(uint16_t port, const log::LoggerSptr &logger_sptr, const std::string &ip) :
         ip_(ip),
         port_(port),
         logger_sptr_(logger_sptr),
