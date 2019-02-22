@@ -9,11 +9,11 @@
 
 class FileWriterTest : public ::testing::Test {
  protected:
-  void SetUp() override {
+  FileWriterTest() {
     writer_ = new cppbox::log::FileWriter("/tmp/cppbox_file_writer_test.log");
   }
 
-  void TearDown() override {
+  ~FileWriterTest() override {
     delete writer_;
   }
 

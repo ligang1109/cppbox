@@ -13,9 +13,9 @@ namespace cppbox {
 
 namespace log {
 
-FileWriter::FileWriter(const char *path) :
+FileWriter::FileWriter(const std::string &path) :
         path_(path),
-        fp_(::fopen(path, "a")),
+        fp_(::fopen(path.c_str(), "a")),
         now_time_uptr_(misc::NowTimeUptr()),
         last_write_seconds_(now_time_uptr_->Sec()) {}
 
@@ -30,9 +30,9 @@ size_t FileWriter::Write(const char *msg, size_t len) {
 
   now_time_uptr_->Update();
   if (last_write_seconds_ != now_time_uptr_->Sec()) {
-    if (!misc::FileExist(path_)) {
+    if (!misc::FileExist(path_.c_str())) {
       ::fclose(fp_);
-      fp_ = ::fopen(path_, "a");
+      fp_ = ::fopen(path_.c_str(), "a");
     }
     last_write_seconds_ = now_time_uptr_->Sec();
   }

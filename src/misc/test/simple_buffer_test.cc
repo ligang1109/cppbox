@@ -8,11 +8,11 @@
 
 class SimpleBufferTest : public ::testing::Test {
  protected:
-  void SetUp() override {
+  SimpleBufferTest() {
     sbufp_ = new cppbox::misc::SimpleBuffer(100);
   }
 
-  void TearDown() override {
+  ~SimpleBufferTest() override {
     delete sbufp_;
   }
 
@@ -40,10 +40,10 @@ TEST_F(SimpleBufferTest, Buffer) {
   std::cout << sbufp_->ReadAllAsString() << std::endl;
 
   std::string s("hello");
-  char        buf[100];
+  char buf[100];
 
   sbufp_->Append(s);
-  auto n      = sbufp_->Read(buf, s.size());
+  auto n = sbufp_->Read(buf, s.size());
 
   EXPECT_EQ(n, s.size());
   for (auto i = 0; i < n; ++i) {

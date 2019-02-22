@@ -16,12 +16,12 @@
 
 class EventLoopTest : public ::testing::Test {
  protected:
-  void SetUp() override {
+  EventLoopTest() {
     event_loop_ptr_ = new cppbox::net::EventLoop();
     EXPECT_TRUE(event_loop_ptr_->Init() == nullptr);
   }
 
-  void TearDown() override {
+  ~EventLoopTest() override {
     delete event_loop_ptr_;
   }
 

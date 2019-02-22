@@ -16,7 +16,7 @@
 
 class TcpConnectionTest : public ::testing::Test {
  protected:
-  void SetUp() override {
+  TcpConnectionTest() {
     event_loop_uptr_ = cppbox::misc::MakeUnique<cppbox::net::EventLoop>();
     EXPECT_TRUE(event_loop_uptr_->Init() == nullptr);
 
@@ -32,7 +32,7 @@ class TcpConnectionTest : public ::testing::Test {
     event_loop_uptr_->Loop();
   }
 
-  void TearDown() override {
+  ~TcpConnectionTest() override {
     ::close(listenfd_);
   }
 

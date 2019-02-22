@@ -12,7 +12,7 @@
 
 class BufferWriterTest : public ::testing::Test {
  protected:
-  void SetUp() override {
+  BufferWriterTest() {
     cppbox::log::WriterSptr cw = std::make_shared<cppbox::log::ConsoleWriter>();
     console_writer_ = new cppbox::log::BufferWriter(cw, 4096);
 
@@ -20,7 +20,7 @@ class BufferWriterTest : public ::testing::Test {
     file_writer_ = new cppbox::log::BufferWriter(fw, 4096);
   }
 
-  void TearDown() override {
+  ~BufferWriterTest() override {
     delete console_writer_;
     delete file_writer_;
   }

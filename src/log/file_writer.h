@@ -19,7 +19,7 @@ namespace log {
 
 class FileWriter : public WriterInterface, public misc::NonCopyable {
  public:
-  explicit FileWriter(const char *path);
+  explicit FileWriter(const std::string &path);
 
   ~FileWriter() override;
 
@@ -32,11 +32,11 @@ class FileWriter : public WriterInterface, public misc::NonCopyable {
  private:
   int FlushUnlocked();
 
-  const char *path_;
-  FILE       *fp_;
+  std::string path_;
+  FILE *fp_;
 
   misc::SimpleTimeUptr now_time_uptr_;
-  time_t               last_write_seconds_;
+  time_t last_write_seconds_;
 
   std::mutex mutex_;
 };

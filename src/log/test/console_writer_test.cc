@@ -9,11 +9,11 @@
 
 class ConsoleWriterTest : public ::testing::Test {
  protected:
-  void SetUp() override {
+  ConsoleWriterTest() {
     writer_ = new cppbox::log::ConsoleWriter();
   }
 
-  void TearDown() override {
+  ~ConsoleWriterTest() override {
     delete writer_;
   }
 
@@ -21,7 +21,6 @@ class ConsoleWriterTest : public ::testing::Test {
 };
 
 TEST_F(ConsoleWriterTest, Write) {
-
   for (int i = 0; i < 100; i++) {
     std::string msg = "hello " + std::to_string(i) + "\n";
     writer_->Write(msg);

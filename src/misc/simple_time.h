@@ -7,8 +7,6 @@
 
 #include <sys/time.h>
 
-#include <memory>
-
 #include "error.h"
 
 namespace cppbox {

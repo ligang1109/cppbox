@@ -14,11 +14,9 @@
 class MiscTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    std::cout << "misc test setup" << std::endl;
   }
 
   void TearDown() override {
-    std::cout << "misc test teardown" << std::endl;
   }
 };
 
@@ -30,7 +28,7 @@ TEST_F(MiscTest, File) {
 
 class TestMakeUnique {
  public:
-  TestMakeUnique(const std::string &name) : name_(name) {
+  explicit TestMakeUnique(const char *name) : name_(name) {
     std::cout << "construct uptr" << std::endl;
   }
 
@@ -42,7 +40,7 @@ class TestMakeUnique {
 };
 
 TEST_F(MiscTest, MakeUnique) {
-  auto uptr = cppbox::misc::MakeUnique<TestMakeUnique>(std::string("test make unique"));
+  auto uptr = cppbox::misc::MakeUnique<TestMakeUnique>("test make unique");
 
   std::cout << uptr->name_ << std::endl;
 }

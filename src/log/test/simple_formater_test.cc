@@ -9,11 +9,11 @@
 
 class SimpleFormaterTest : public ::testing::Test {
  protected:
-  void SetUp() override {
+  SimpleFormaterTest() {
     formater_ = new cppbox::log::SimpleFormater("abcdefg", "127.0.0.1:12345");
   }
 
-  void TearDown() override {
+  ~SimpleFormaterTest() override {
     delete formater_;
   }
 

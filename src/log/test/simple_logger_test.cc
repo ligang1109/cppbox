@@ -15,9 +15,9 @@
 
 class SimpleLoggerTest : public ::testing::Test {
  protected:
-  void SetUp() override {
-    std::string               log_id("abcdefg");
-    std::string               address("127.0.0.1:12345");
+  SimpleLoggerTest() {
+    std::string log_id("abcdefg");
+    std::string address("127.0.0.1:12345");
     cppbox::log::FormaterSptr fr = std::make_shared<cppbox::log::SimpleFormater>(log_id, address);
 
     cppbox::log::WriterSptr cw = std::make_shared<cppbox::log::ConsoleWriter>();
@@ -28,11 +28,11 @@ class SimpleLoggerTest : public ::testing::Test {
     flogger_ = new cppbox::log::SimpleLogger(bw, fr, cppbox::log::LogLevel::kDEBUG);
 
     cppbox::log::WriterSptr afw = std::make_shared<cppbox::log::FileWriter>("/tmp/cppbox_simple_logger_async_test.log");
-    cppbox::log::WriterSptr aw  = std::make_shared<cppbox::log::AsyncWriter>(afw);
+    cppbox::log::WriterSptr aw = std::make_shared<cppbox::log::AsyncWriter>(afw);
     alogger_ = new cppbox::log::SimpleLogger(aw, fr, cppbox::log::LogLevel::kDEBUG);
   }
 
-  void TearDown() override {
+  ~SimpleLoggerTest() override {
     delete clogger_;
     delete flogger_;
     delete alogger_;

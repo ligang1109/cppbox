@@ -9,14 +9,14 @@
 
 class EpollTest : public ::testing::Test {
  protected:
-  void SetUp() override {
+  EpollTest() {
     epoll_ = new cppbox::net::Epoll();
 
     sockfd_ = cppbox::net::NewTcpIpV4NonBlockSocket();
     cppbox::net::BindAndListenForTcpIpV4(sockfd_, "127.0.0.1", 8860);
   }
 
-  void TearDown() override {
+  ~EpollTest() override {
     delete epoll_;
     ::close(sockfd_);
   }
