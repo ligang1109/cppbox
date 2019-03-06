@@ -5,15 +5,24 @@
 #include "gtest/gtest.h"
 
 #include "net/tcp_server.h"
+#include "log/console_writer.h"
+#include "log/simple_logger.h"
+#include "log/simple_formater.h"
 
 
 class TcpServerTest : public ::testing::Test {
  protected:
-  void SetUp() override {
+  TcpServerTest() {
+    cppbox::log::FormaterSptr fr = std::make_shared<cppbox::log::SimpleFormater>();
+    cppbox::log::WriterSptr   cw = std::make_shared<cppbox::log::ConsoleWriter>();
+    logger_sptr_ = std::make_shared<cppbox::log::SimpleLogger>(cw, fr, cppbox::log::LogLevel::kDEBUG);
+
   }
 
-  void TearDown() override {
+  ~TcpServerTest() override {
   }
+
+  cppbox::log::LoggerSptr logger_sptr_;
 };
 
 
@@ -36,11 +45,11 @@ using MyTcpConnectionSptr = std::shared_ptr<MyTcpConnection>;
 
 class EchoServer {
  public:
-  explicit EchoServer(uint16_t port) :
-          server_uptr_(new cppbox::net::TcpServer(8860)) {}
+  explicit EchoServer(uint16_t port, const cppbox::log::LoggerSptr &logger_sptr) :
+          server_uptr_(new cppbox::net::TcpServer(8860, logger_sptr)) {}
 
   void Start() {
-    server_uptr_->Init(10, -1);
+    server_uptr_->Init(10, -1, 10, 2);
     server_uptr_->set_new_conn_func(
             std::bind(
                     &EchoServer::NewConnection, this,
@@ -101,7 +110,7 @@ class EchoServer {
     std::cout << "last receive time is " << my_conn_sptr->last_receive_time_sptr()->Format() << std::endl;
 
     char buf[1024];
-    auto n = my_conn_sptr->Receive(buf, sizeof buf);
+    auto n            = my_conn_sptr->Receive(buf, sizeof buf);
 
     my_conn_sptr->Send(buf, n);
   }
@@ -111,13 +120,12 @@ class EchoServer {
               << " at time " << happened_st_sptr->Format() << std::endl;
   }
 
-
   cppbox::net::TcpServerUptr server_uptr_;
 };
 
 
 TEST_F(TcpServerTest, EchoServer) {
-  auto echo_server_uptr = std::unique_ptr<EchoServer>(new EchoServer(8860));
+  auto echo_server_uptr = std::unique_ptr<EchoServer>(new EchoServer(8860, logger_sptr_));
 
   echo_server_uptr->Start();
 }

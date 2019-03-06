@@ -53,10 +53,6 @@ size_t AsyncWriter::Write(const char *msg, size_t len) {
     cur_buffer_uptr_.reset(new misc::SimpleBuffer(flush_size_));
   }
 
-  if (len > cur_buffer_uptr_->Writeable()) {
-    return 0;
-  }
-
   cur_buffer_uptr_->Append(msg, len);
   cond_.notify_one();
 

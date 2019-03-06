@@ -26,7 +26,7 @@ class EventLoop : public misc::NonCopyable {
 
   ~EventLoop();
 
-  misc::ErrorUptr Init();
+  misc::ErrorUptr Init(int init_evlist_size = 1024);
 
   void UpdateEvent(EventSptr event_sptr);
 

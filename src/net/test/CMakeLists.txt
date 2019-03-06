@@ -1,5 +1,6 @@
 link_libraries(
         ${BUILD_SRC_DIR}/net/libnet.a
+        ${BUILD_SRC_DIR}/log/liblog.a
         ${BUILD_SRC_DIR}/misc/libmisc.a
 )
 

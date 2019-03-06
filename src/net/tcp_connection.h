@@ -20,10 +20,10 @@ namespace cppbox {
 namespace net {
 
 enum class ConnectionStatus {
-  kNotset = 0,
-  kDisconnected = 1,
-  kConnecting = 2,
-  kConnected = 3,
+  kNotset        = 0,
+  kDisconnected  = 1,
+  kConnecting    = 2,
+  kConnected     = 3,
   kDisconnecting = 4,
 };
 
@@ -36,6 +36,8 @@ using TcpConnCallback = std::function<void(const TcpConnectionSptr &, const misc
 class TcpConnection : public misc::NonCopyable,
                       public std::enable_shared_from_this<TcpConnection> {
  public:
+  using DestructCallback = std::function<void(TcpConnection &)>;
+
   explicit TcpConnection(int connfd, const InetAddress &address, EventLoop *loop_ptr, size_t read_protected_size = 4096);
 
   ~TcpConnection();
@@ -64,6 +66,8 @@ class TcpConnection : public misc::NonCopyable,
 
   void set_error_callback(const TcpConnCallback &cb);
 
+  void set_destruct_callback(const DestructCallback &cb);
+
   void ConnectEstablished(const misc::SimpleTimeSptr &happened_st_sptr = nullptr);
 
   void GracefulClosed(const misc::SimpleTimeSptr &happened_st_sptr = nullptr);
@@ -81,13 +85,13 @@ class TcpConnection : public misc::NonCopyable,
 
   void EnsureWriteEvents();
 
-  int connfd_;
-  std::string remote_ip_;
-  uint16_t remote_port_;
-  EventLoop *loop_ptr_;
+  int              connfd_;
+  std::string      remote_ip_;
+  uint16_t         remote_port_;
+  EventLoop        *loop_ptr_;
   ConnectionStatus status_;
-  EventSptr rw_event_sptr_;
-  size_t read_protected_size_;
+  EventSptr        rw_event_sptr_;
+  size_t           read_protected_size_;
 
   misc::SimpleBufferUptr read_buf_uptr_;
   misc::SimpleBufferUptr write_buf_uptr_;
@@ -100,6 +104,8 @@ class TcpConnection : public misc::NonCopyable,
   TcpConnCallback read_callback_;
   TcpConnCallback write_complete_callback_;
   TcpConnCallback error_callback_;
+
+  DestructCallback destruct_callback_;
 };
 
 

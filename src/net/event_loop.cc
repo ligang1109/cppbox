@@ -28,8 +28,8 @@ EventLoop::~EventLoop() {
   ::close(wakeup_fd_);
 }
 
-misc::ErrorUptr EventLoop::Init() {
-  epoll_uptr_ = misc::MakeUnique<Epoll>();
+misc::ErrorUptr EventLoop::Init(int init_evlist_size) {
+  epoll_uptr_ = misc::MakeUnique<Epoll>(init_evlist_size);
   auto eu = epoll_uptr_->Init();
   if (eu != nullptr) {
     return eu;

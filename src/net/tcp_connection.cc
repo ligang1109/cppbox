@@ -28,6 +28,11 @@ TcpConnection::~TcpConnection() {
   if (status_ != ConnectionStatus::kDisconnected) {
     loop_ptr_->DelEvent(connfd_);
     ::close(connfd_);
+    status_ = ConnectionStatus::kDisconnected;
+  }
+
+  if (destruct_callback_ != nullptr) {
+    destruct_callback_(*this);
   }
 }
 
@@ -77,6 +82,10 @@ void TcpConnection::set_write_complete_callback(const TcpConnCallback &cb) {
 
 void TcpConnection::set_error_callback(const TcpConnCallback &cb) {
   error_callback_ = cb;
+}
+
+void TcpConnection::set_destruct_callback(const DestructCallback &cb) {
+  destruct_callback_ = cb;
 }
 
 void TcpConnection::ConnectEstablished(const misc::SimpleTimeSptr &happened_st_sptr) {

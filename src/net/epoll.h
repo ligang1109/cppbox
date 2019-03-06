@@ -20,7 +20,7 @@ class Epoll {
  public:
   using ReadyList = std::vector<std::pair<int, uint32_t>>;
 
-  explicit Epoll(int init_evlist_size = 16);
+  explicit Epoll(int init_evlist_size = 1024);
 
   ~Epoll();
 

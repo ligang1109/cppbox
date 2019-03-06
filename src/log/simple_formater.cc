@@ -24,9 +24,14 @@ SimpleFormater::SimpleFormater(const std::string &log_id, const std::string &add
 
 std::string SimpleFormater::Format(LogLevel level, const std::string &msg) {
   last_fmt_time_uptr_->Update();
-  if (last_fmt_seconds_ != last_fmt_time_uptr_->Sec()) {
-    last_fmt_seconds_     = last_fmt_time_uptr_->Sec();
-    last_fmt_seconds_str_ = last_fmt_time_uptr_->Format();
+
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (last_fmt_seconds_ != last_fmt_time_uptr_->Sec()) {
+      last_fmt_seconds_     = last_fmt_time_uptr_->Sec();
+      last_fmt_seconds_str_ = last_fmt_time_uptr_->Format();
+    }
   }
 
   return kLogLevelMsgList[static_cast<int>(level)] + "\t" +
