@@ -120,25 +120,6 @@ void TcpServer::RunFunctionInConnectionThread(int conn_thread_id, const EventLoo
   }
 }
 
-void TcpServer::RunAtTimeInConnectionThread(time_t abs_sec, const Event::EventCallback &cb) {
-  for (auto &conn_thread_uptr : conn_thread_list_) {
-    conn_thread_uptr->RunAtTime(abs_sec, cb);
-  }
-}
-
-void TcpServer::RunAfterTimeInConnectionThread(time_t delay_sec, const Event::EventCallback &cb) {
-  for (auto &conn_thread_uptr : conn_thread_list_) {
-    conn_thread_uptr->RunAfterTime(delay_sec, cb);
-  }
-}
-
-void TcpServer::RunEveryTimeInConnectionThread(time_t interval_sec, const Event::EventCallback &cb) {
-  for (auto &conn_thread_uptr : conn_thread_list_) {
-    conn_thread_uptr->RunEveryTime(interval_sec, cb);
-  }
-}
-
-
 misc::ErrorUptr TcpServer::ListenAndServe() {
   auto err_uptr = BindAndListenForTcpIpV4(listenfd_, ip_.c_str(), port_);
   if (err_uptr != nullptr) {
@@ -187,8 +168,6 @@ TcpServer::ConnectionThread::ConnectionThread(int id, TcpServer *server_ptr, siz
         server_ptr_(server_ptr),
         check_idle_interval_seconds_(check_idle_interval_seconds),
         loop_uptr_(nullptr),
-        time_event_sptr_(nullptr),
-        has_added_time_event_(false),
         thread_uptr_(nullptr),
         time_wheel_(time_wheel_size),
         time_hand_(0),
@@ -197,12 +176,6 @@ TcpServer::ConnectionThread::ConnectionThread(int id, TcpServer *server_ptr, siz
 misc::ErrorUptr TcpServer::ConnectionThread::Init(int loop_timeout_ms, int init_evlist_size) {
   loop_uptr_.reset(new EventLoop(server_ptr_->logger_sptr_, loop_timeout_ms));
   auto err_uptr = loop_uptr_->Init(init_evlist_size);
-  if (err_uptr != nullptr) {
-    return err_uptr;
-  }
-
-  time_event_sptr_.reset(new TimeEvent());
-  err_uptr = time_event_sptr_->Init();
   if (err_uptr != nullptr) {
     return err_uptr;
   }
@@ -242,21 +215,6 @@ void TcpServer::ConnectionThread::RunFunction(const EventLoop::Functor &func) {
   loop_uptr_->AppendFunction(func);
 }
 
-void TcpServer::ConnectionThread::RunAtTime(time_t abs_sec, const Event::EventCallback &cb) {
-  time_event_sptr_->RunAt(abs_sec, cb);
-  EnsureAddTimeEvent();
-}
-
-void TcpServer::ConnectionThread::RunAfterTime(time_t delay_sec, const Event::EventCallback &cb) {
-  time_event_sptr_->RunAfter(delay_sec, cb);
-  EnsureAddTimeEvent();
-}
-
-void TcpServer::ConnectionThread::RunEveryTime(time_t interval_sec, const Event::EventCallback &cb) {
-  time_event_sptr_->RunEvery(interval_sec, cb);
-  EnsureAddTimeEvent();
-}
-
 void TcpServer::ConnectionThread::TimeWheelFunc(const misc::SimpleTimeSptr &happened_st_sptr) {
   time_hand_ = (time_hand_ + 1) % time_wheel_.size();
 
@@ -285,9 +243,11 @@ void TcpServer::ConnectionThread::UpdateActiveConnection(const TcpConnectionSptr
   auto connfd   = tcp_conn_sptr->connfd();
   auto old_hand = conn_time_wheel_map_[connfd];
 
-  conn_time_wheel_map_[connfd]    = time_hand_;
-  time_wheel_[time_hand_][connfd] = tcp_conn_sptr;
-  time_wheel_[old_hand].erase(connfd);
+  if (old_hand != time_hand_) {
+    conn_time_wheel_map_[connfd]    = time_hand_;
+    time_wheel_[time_hand_][connfd] = tcp_conn_sptr;
+    time_wheel_[old_hand].erase(connfd);
+  }
 }
 
 void TcpServer::ConnectionThread::ConnectionReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr) {
@@ -349,12 +309,6 @@ void TcpServer::ConnectionThread::DisconnectedCallback(const TcpConnectionSptr &
   }
 }
 
-void TcpServer::ConnectionThread::EnsureAddTimeEvent() {
-  if (!has_added_time_event_) {
-    loop_uptr_->UpdateEvent(time_event_sptr_);
-    has_added_time_event_ = true;
-  }
-}
 
 }
 

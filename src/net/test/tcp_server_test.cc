@@ -14,7 +14,7 @@ class TcpServerTest : public ::testing::Test {
  protected:
   TcpServerTest() {
     cppbox::log::FormaterSptr fr = std::make_shared<cppbox::log::SimpleFormater>();
-    cppbox::log::WriterSptr   cw = std::make_shared<cppbox::log::ConsoleWriter>();
+    cppbox::log::WriterSptr cw = std::make_shared<cppbox::log::ConsoleWriter>();
     logger_sptr_ = std::make_shared<cppbox::log::SimpleLogger>(cw, fr, cppbox::log::LogLevel::kDEBUG);
 
   }
@@ -75,10 +75,6 @@ class EchoServer {
                     std::placeholders::_1,
                     std::placeholders::_2));
 
-    server_uptr_->RunEveryTimeInConnectionThread(5,
-                                                 std::bind(&EchoServer::RunEveryTimeCallback, this,
-                                                           std::placeholders::_1));
-
     server_uptr_->Start();
   }
 
@@ -110,14 +106,9 @@ class EchoServer {
     std::cout << "last receive time is " << my_conn_sptr->last_receive_time_sptr()->Format() << std::endl;
 
     char buf[1024];
-    auto n            = my_conn_sptr->Receive(buf, sizeof buf);
+    auto n = my_conn_sptr->Receive(buf, sizeof buf);
 
     my_conn_sptr->Send(buf, n);
-  }
-
-  void RunEveryTimeCallback(const cppbox::misc::SimpleTimeSptr &happened_st_sptr) {
-    std::cout << "run every time in thread " << cppbox::net::TcpConnectionThreadId()
-              << " at time " << happened_st_sptr->Format() << std::endl;
   }
 
   cppbox::net::TcpServerUptr server_uptr_;

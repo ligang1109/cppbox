@@ -43,12 +43,6 @@ class TcpServer : public misc::NonCopyable {
 
   void RunFunctionInConnectionThread(int conn_thread_id, const EventLoop::Functor &func);
 
-  void RunAtTimeInConnectionThread(time_t abs_sec, const Event::EventCallback &cb);
-
-  void RunAfterTimeInConnectionThread(time_t delay_sec, const Event::EventCallback &cb);
-
-  void RunEveryTimeInConnectionThread(time_t interval_sec, const Event::EventCallback &cb);
-
  private:
   class ConnectionThread {
    public:
@@ -63,12 +57,6 @@ class TcpServer : public misc::NonCopyable {
     size_t ConnectionCount();
 
     void RunFunction(const EventLoop::Functor &func);
-
-    void RunAtTime(time_t abs_sec, const Event::EventCallback &cb);
-
-    void RunAfterTime(time_t delay_sec, const Event::EventCallback &cb);
-
-    void RunEveryTime(time_t interval_sec, const Event::EventCallback &cb);
 
    private:
     void TimeWheelFunc(const misc::SimpleTimeSptr &happened_st_sptr);
@@ -87,17 +75,12 @@ class TcpServer : public misc::NonCopyable {
 
     void DisconnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr);
 
-    void EnsureAddTimeEvent();
-
     int    id_;
     size_t check_idle_interval_seconds_;
 
     TcpServer                    *server_ptr_;
     std::unique_ptr<std::thread> thread_uptr_;
-
-    EventLoopUptr loop_uptr_;
-    TimeEventSptr time_event_sptr_;
-    bool          has_added_time_event_;
+    EventLoopUptr                loop_uptr_;
 
     std::vector<std::map<int, TcpConnectionSptr>> time_wheel_;
     size_t                                        time_hand_;
