@@ -11,8 +11,6 @@
 
 #include "event.h"
 
-#include "log/base.h"
-
 namespace cppbox {
 
 namespace net {
@@ -22,7 +20,7 @@ class EventLoop : public misc::NonCopyable {
  public:
   using Functor = std::function<void()>;
 
-  explicit EventLoop(const log::LoggerSptr &logger_sptr = nullptr, int timeout_ms = -1);
+  explicit EventLoop(int timeout_ms = -1);
 
   ~EventLoop();
 
@@ -34,7 +32,7 @@ class EventLoop : public misc::NonCopyable {
 
   void DelEvent(int fd);
 
-  void Loop();
+  misc::ErrorUptr Loop();
 
   void Quit();
 
@@ -49,17 +47,16 @@ class EventLoop : public misc::NonCopyable {
 
   void RunFunctions();
 
-  int wakeup_fd_;
+  int       wakeup_fd_;
   EpollUptr epoll_uptr_;
 
-  std::atomic<bool> quit_;
+  std::atomic<bool>        quit_;
   std::map<int, EventSptr> event_map_;
 
-  std::mutex mutex_;
+  std::mutex           mutex_;
   std::vector<Functor> function_list_;
-  bool handling_events_;
+  bool                 handling_events_;
 
-  log::LoggerSptr logger_sptr_;
   int timeout_ms_;
 };
 

@@ -1,6 +1,5 @@
 link_libraries(
         ${BUILD_SRC_DIR}/net/libnet.a
-        ${BUILD_SRC_DIR}/log/liblog.a
         ${BUILD_SRC_DIR}/misc/libmisc.a
 )
 
@@ -34,10 +33,26 @@ add_executable(net_tcp_server_test
 
 target_link_libraries(net_tcp_server_test pthread)
 
+include(${VENDOR_DIR}/curl/curl.cmake)
+
+add_executable(net_http_parse_test
+        http_parse_test.cc
+        )
+
+target_link_libraries(net_http_parse_test pthread)
+
+add_executable(net_http_server_test
+        http_server_test.cc
+        )
+
+target_link_libraries(net_http_server_test pthread)
+
 install(TARGETS
         net_test
         net_tcp_connection_test
         net_epoll_test
         net_event_loop_test
         net_tcp_server_test
+        net_http_parse_test
+        net_http_server_test
         RUNTIME DESTINATION test/net)

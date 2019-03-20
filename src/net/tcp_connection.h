@@ -20,11 +20,12 @@ namespace cppbox {
 namespace net {
 
 enum class ConnectionStatus {
-  kNotset        = 0,
-  kDisconnected  = 1,
-  kConnecting    = 2,
-  kConnected     = 3,
-  kDisconnecting = 4,
+  kNotset = 0,
+  kDisconnected = 1,
+  kConnecting = 2,
+  kConnected = 3,
+  kPrepareDisconnect = 4,
+  kDisconnecting = 5,
 };
 
 
@@ -70,28 +71,38 @@ class TcpConnection : public misc::NonCopyable,
 
   void ConnectEstablished(const misc::SimpleTimeSptr &happened_st_sptr = nullptr);
 
-  void GracefulClosed(const misc::SimpleTimeSptr &happened_st_sptr = nullptr);
-
-  void ForceClosed(const misc::SimpleTimeSptr &happened_st_sptr = nullptr);
+  void Close();
 
   size_t Receive(char *data, size_t len);
 
   ssize_t Send(char *data, size_t len);
 
- private:
+  ssize_t SendWriteBuffer();
+
+  misc::SimpleBuffer *ReadBuffer();
+
+  misc::SimpleBuffer *WriteBuffer();
+
+ protected:
   void ReadFdCallback(const misc::SimpleTimeSptr &happened_st_sptr);
 
   void WriteFdCallback(const misc::SimpleTimeSptr &happened_st_sptr);
 
   void EnsureWriteEvents();
 
-  int              connfd_;
-  std::string      remote_ip_;
-  uint16_t         remote_port_;
-  EventLoop        *loop_ptr_;
+  bool EnsureCloseAfterCallback();
+
+  void GracefulClose(const misc::SimpleTimeSptr &happened_st_sptr = nullptr);
+
+  void ForceClose(const misc::SimpleTimeSptr &happened_st_sptr = nullptr);
+
+  int connfd_;
+  std::string remote_ip_;
+  uint16_t remote_port_;
+  EventLoop *loop_ptr_;
   ConnectionStatus status_;
-  EventSptr        rw_event_sptr_;
-  size_t           read_protected_size_;
+  EventSptr rw_event_sptr_;
+  size_t read_protected_size_;
 
   misc::SimpleBufferUptr read_buf_uptr_;
   misc::SimpleBufferUptr write_buf_uptr_;

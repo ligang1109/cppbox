@@ -5,24 +5,15 @@
 #include "gtest/gtest.h"
 
 #include "net/tcp_server.h"
-#include "log/console_writer.h"
-#include "log/simple_logger.h"
-#include "log/simple_formater.h"
 
 
 class TcpServerTest : public ::testing::Test {
  protected:
   TcpServerTest() {
-    cppbox::log::FormaterSptr fr = std::make_shared<cppbox::log::SimpleFormater>();
-    cppbox::log::WriterSptr cw = std::make_shared<cppbox::log::ConsoleWriter>();
-    logger_sptr_ = std::make_shared<cppbox::log::SimpleLogger>(cw, fr, cppbox::log::LogLevel::kDEBUG);
-
   }
 
   ~TcpServerTest() override {
   }
-
-  cppbox::log::LoggerSptr logger_sptr_;
 };
 
 
@@ -45,8 +36,8 @@ using MyTcpConnectionSptr = std::shared_ptr<MyTcpConnection>;
 
 class EchoServer {
  public:
-  explicit EchoServer(uint16_t port, const cppbox::log::LoggerSptr &logger_sptr) :
-          server_uptr_(new cppbox::net::TcpServer(8860, logger_sptr)) {}
+  explicit EchoServer(uint16_t port) :
+          server_uptr_(new cppbox::net::TcpServer(8860)) {}
 
   void Start() {
     server_uptr_->Init(10, -1, 10, 2);
@@ -116,7 +107,7 @@ class EchoServer {
 
 
 TEST_F(TcpServerTest, EchoServer) {
-  auto echo_server_uptr = std::unique_ptr<EchoServer>(new EchoServer(8860, logger_sptr_));
+  auto echo_server_uptr = std::unique_ptr<EchoServer>(new EchoServer(8860));
 
   echo_server_uptr->Start();
 }

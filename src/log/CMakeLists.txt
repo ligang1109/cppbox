@@ -8,6 +8,11 @@ set(LOG_HEADER_LIST
         ${LOG_SRC_DIR}/simple_logger.h
         )
 
+install(FILES ${LOG_HEADER_LIST}
+        DESTINATION include/log
+        )
+
+
 set(LOG_SRC_LIST
         ${LOG_SRC_DIR}/async_writer.cc
         ${LOG_SRC_DIR}/buffer_writer.cc
@@ -22,11 +27,6 @@ add_library(liblog_static STATIC
         )
 
 set_target_properties(liblog_static PROPERTIES OUTPUT_NAME "log")
-
-
-install(FILES ${LOG_HEADER_LIST}
-        DESTINATION include/log
-        )
 
 install(TARGETS liblog_static
         ARCHIVE DESTINATION lib)

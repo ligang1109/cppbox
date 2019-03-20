@@ -6,6 +6,11 @@ set(MISC_HEADER_LIST
         ${MISC_SRC_DIR}/simple_time.h
         )
 
+install(FILES ${MISC_HEADER_LIST}
+        DESTINATION include/misc
+        )
+
+
 set(MISC_SRC_LIST
         ${MISC_SRC_DIR}/error.cc
         ${MISC_SRC_DIR}/misc.cc
@@ -18,11 +23,6 @@ add_library(libmisc_static STATIC
         )
 
 set_target_properties(libmisc_static PROPERTIES OUTPUT_NAME "misc")
-
-
-install(FILES ${MISC_HEADER_LIST}
-        DESTINATION include/misc
-        )
 
 install(TARGETS libmisc_static
         ARCHIVE DESTINATION lib)

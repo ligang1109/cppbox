@@ -13,6 +13,7 @@ set(CXX_FLAGS
 
 set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
 set(BUILD_SRC_DIR ${PROJECT_BINARY_DIR}/src)
+set(VENDOR_DIR ${PROJECT_SOURCE_DIR}/vendor)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     include_directories(
@@ -26,6 +27,7 @@ endif ()
 
 include_directories(
         ${SRC_DIR}
+        ${VENDOR_DIR}
 )
 
 set(MISC_SRC_DIR ${SRC_DIR}/misc)

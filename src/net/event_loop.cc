@@ -14,15 +14,10 @@ namespace cppbox {
 namespace net {
 
 
-EventLoop::EventLoop(const log::LoggerSptr &logger_sptr, int timeout_ms) :
+EventLoop::EventLoop(int timeout_ms) :
         quit_(false),
         handling_events_(false),
-        logger_sptr_(logger_sptr),
-        timeout_ms_(timeout_ms) {
-  if (logger_sptr_ == nullptr) {
-    logger_sptr_.reset(new log::NullLogger());
-  }
-}
+        timeout_ms_(timeout_ms) {}
 
 EventLoop::~EventLoop() {
   ::close(wakeup_fd_);
@@ -30,7 +25,7 @@ EventLoop::~EventLoop() {
 
 misc::ErrorUptr EventLoop::Init(int init_evlist_size) {
   epoll_uptr_ = misc::MakeUnique<Epoll>(init_evlist_size);
-  auto eu = epoll_uptr_->Init();
+  auto eu     = epoll_uptr_->Init();
   if (eu != nullptr) {
     return eu;
   }
@@ -72,7 +67,7 @@ void EventLoop::DelEvent(int fd) {
   event_map_.erase(fd);
 }
 
-void EventLoop::Loop() {
+misc::ErrorUptr EventLoop::Loop() {
   quit_ = false;
 
   while (!quit_) {
@@ -80,8 +75,7 @@ void EventLoop::Loop() {
 
     auto eu = epoll_uptr_->Wait(&ready_list, timeout_ms_);
     if (eu != nullptr) {
-      logger_sptr_->Error("epoll wait error: " + eu->String());
-      return;
+      return eu;
     }
 
     auto st_sptr = misc::NowTimeSptr();
