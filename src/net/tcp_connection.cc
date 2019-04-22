@@ -64,6 +64,14 @@ misc::SimpleTimeSptr TcpConnection::last_receive_time_sptr() {
   return last_receive_time_sptr_;
 }
 
+void TcpConnection::set_timeout_seconds(uint16_t timeout_seconds) {
+  timeout_seconds_ = timeout_seconds;
+}
+
+uint16_t TcpConnection::timeout_seconds() {
+  return timeout_seconds_;
+}
+
 void TcpConnection::set_connected_callback(const TcpConnCallback &cb) {
   connected_callback_ = cb;
 }

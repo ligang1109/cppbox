@@ -62,9 +62,9 @@ using HttpHandleFunc = std::function<void(const HttpConnectionSptr &)>;
 class HttpServer : public misc::NonCopyable {
  public:
 
-  explicit HttpServer(uint16_t port, const std::string &ip = "127.0.0.1");
+  explicit HttpServer(uint16_t port, const std::string &ip = "127.0.0.1", uint16_t default_conn_idle_seconds = 300);
 
-  misc::ErrorUptr Init(int conn_thread_cnt, int conn_thread_loop_timeout_ms, size_t conn_idle_seconds = 0, size_t check_idle_interval_seconds = 3, int init_evlist_size = 1024);
+  misc::ErrorUptr Init(int conn_thread_cnt, int conn_thread_loop_timeout_ms, int init_evlist_size = 1024);
 
   misc::ErrorUptr Start();
 

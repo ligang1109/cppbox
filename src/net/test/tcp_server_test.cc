@@ -37,10 +37,10 @@ using MyTcpConnectionSptr = std::shared_ptr<MyTcpConnection>;
 class EchoServer {
  public:
   explicit EchoServer(uint16_t port) :
-          server_uptr_(new cppbox::net::TcpServer(8860)) {}
+          server_uptr_(new cppbox::net::TcpServer(8860, "127.0.0.1", 10)) {}
 
   void Start() {
-    server_uptr_->Init(10, -1, 10, 2);
+    server_uptr_->Init(10, -1);
     server_uptr_->set_new_conn_func(
             std::bind(
                     &EchoServer::NewConnection, this,

@@ -26,7 +26,7 @@ class EventLoop : public misc::NonCopyable {
 
   misc::ErrorUptr Init(int init_evlist_size = 1024);
 
-  void UpdateEvent(EventSptr event_sptr);
+  void UpdateEvent(const EventSptr &event_sptr);
 
   EventSptr GetEvent(int fd);
 
@@ -47,15 +47,15 @@ class EventLoop : public misc::NonCopyable {
 
   void RunFunctions();
 
-  int       wakeup_fd_;
+  int wakeup_fd_;
   EpollUptr epoll_uptr_;
 
-  std::atomic<bool>        quit_;
+  std::atomic<bool> quit_;
   std::map<int, EventSptr> event_map_;
 
-  std::mutex           mutex_;
+  std::mutex mutex_;
   std::vector<Functor> function_list_;
-  bool                 handling_events_;
+  bool handling_events_;
 
   int timeout_ms_;
 };

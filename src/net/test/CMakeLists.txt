@@ -27,6 +27,12 @@ add_executable(net_event_loop_test
 
 target_link_libraries(net_event_loop_test pthread)
 
+add_executable(net_tcp_conn_time_wheel_test
+        tcp_conn_time_wheel_test.cc
+        )
+
+target_link_libraries(net_tcp_conn_time_wheel_test pthread)
+
 add_executable(net_tcp_server_test
         tcp_server_test.cc
         )
@@ -53,6 +59,7 @@ install(TARGETS
         net_epoll_test
         net_event_loop_test
         net_tcp_server_test
+        net_tcp_conn_time_wheel_test
         net_http_parse_test
         net_http_server_test
         RUNTIME DESTINATION test/net)

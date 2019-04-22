@@ -6,6 +6,7 @@ set(NET_HEADER_LIST
         ${NET_SRC_DIR}/event_loop.h
         ${NET_SRC_DIR}/net.h
         ${NET_SRC_DIR}/tcp_connection.h
+        ${NET_SRC_DIR}/tcp_conn_time_wheel.h
         ${NET_SRC_DIR}/tcp_server.h
         ${NET_SRC_DIR}/http_parse.h
         ${NET_SRC_DIR}/http_request.h
@@ -23,6 +24,7 @@ set(NET_SRC_LIST
         ${NET_SRC_DIR}/event_loop.cc
         ${NET_SRC_DIR}/net.cc
         ${NET_SRC_DIR}/tcp_connection.cc
+        ${NET_SRC_DIR}/tcp_conn_time_wheel.cc
         ${NET_SRC_DIR}/tcp_server.cc
         ${NET_SRC_DIR}/http_parse.cc
         ${NET_SRC_DIR}/http_request.cc

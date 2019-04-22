@@ -83,11 +83,11 @@ void HttpConnection::SendResponse() {
 }
 
 
-HttpServer::HttpServer(uint16_t port, const std::string &ip) :
-        server_(port, ip) {}
+HttpServer::HttpServer(uint16_t port, const std::string &ip, uint16_t default_conn_idle_seconds) :
+        server_(port, ip, default_conn_idle_seconds) {}
 
-misc::ErrorUptr HttpServer::Init(int conn_thread_cnt, int conn_thread_loop_timeout_ms, size_t conn_idle_seconds, size_t check_idle_interval_seconds, int init_evlist_size) {
-  return server_.Init(conn_thread_cnt, conn_thread_loop_timeout_ms, conn_idle_seconds, check_idle_interval_seconds);
+misc::ErrorUptr HttpServer::Init(int conn_thread_cnt, int conn_thread_loop_timeout_ms, int init_evlist_size) {
+  return server_.Init(conn_thread_cnt, conn_thread_loop_timeout_ms, init_evlist_size);
 }
 
 misc::ErrorUptr HttpServer::Start() {

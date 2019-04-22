@@ -20,11 +20,12 @@ int TcpConnectionThreadId() {
   return tcp_conn_thread_id;
 }
 
-TcpServer::TcpServer(uint16_t port, const std::string &ip) :
+TcpServer::TcpServer(uint16_t port, const std::string &ip, uint16_t default_conn_idle_seconds) :
         ip_(ip),
         port_(port),
         loop_uptr_(nullptr),
-        dispatch_index_(0) {}
+        dispatch_index_(0),
+        default_conn_idle_seconds_(default_conn_idle_seconds) {}
 
 void TcpServer::set_new_conn_func(const NewConnectionFunc &func) {
   new_conn_func_ = func;
@@ -50,18 +51,10 @@ void TcpServer::set_error_callback(const TcpConnCallback &cb) {
   error_callback_ = cb;
 }
 
-misc::ErrorUptr TcpServer::Init(int conn_thread_cnt, int conn_thread_loop_timeout_ms, size_t conn_idle_seconds, size_t check_idle_interval_seconds, int init_evlist_size) {
-  if (conn_idle_seconds != 0) {
-    if (conn_idle_seconds < check_idle_interval_seconds) {
-      return misc::NewErrorUptr(misc::Error::kInvalidArg, "conn_idle_seconds less than check_idle_interval_seconds");
-    }
-
-    if (conn_idle_seconds % check_idle_interval_seconds != 0) {
-      return misc::NewErrorUptr(misc::Error::kInvalidArg, "conn_idle_seconds must be divided by check_idle_interval_seconds");
-    }
+misc::ErrorUptr TcpServer::Init(int conn_thread_cnt, int conn_thread_loop_timeout_ms, int init_evlist_size) {
+  if (default_conn_idle_seconds_ > TcpConnTimeWheel::kMaxConnIdleSeconds) {
+    return misc::NewErrorUptr(misc::Error::kInvalidArg, "default_conn_idle_seconds > max_conn_idle_seconds");
   }
-
-  auto time_wheel_size = conn_idle_seconds / check_idle_interval_seconds + 1;
 
   listenfd_ = NewTcpIpV4NonBlockSocket();
   if (listenfd_ == -1) {
@@ -75,7 +68,7 @@ misc::ErrorUptr TcpServer::Init(int conn_thread_cnt, int conn_thread_loop_timeou
   }
 
   for (auto i = 0; i < conn_thread_cnt; ++i) {
-    auto conn_thread_uptr = misc::MakeUnique<ConnectionThread>(i, this, time_wheel_size, check_idle_interval_seconds);
+    auto conn_thread_uptr = misc::MakeUnique<ConnectionThread>(i, this);
     err_uptr = conn_thread_uptr->Init(conn_thread_loop_timeout_ms, init_evlist_size);
     if (err_uptr != nullptr) {
       return err_uptr;
@@ -163,15 +156,12 @@ TcpConnectionSptr TcpServer::DefaultNewConnection(int connfd, const cppbox::net:
 }
 
 
-TcpServer::ConnectionThread::ConnectionThread(int id, TcpServer *server_ptr, size_t time_wheel_size, size_t check_idle_interval_seconds) :
+TcpServer::ConnectionThread::ConnectionThread(int id, TcpServer *server_ptr) :
         id_(id),
         server_ptr_(server_ptr),
-        check_idle_interval_seconds_(check_idle_interval_seconds),
-        loop_uptr_(nullptr),
         thread_uptr_(nullptr),
-        time_wheel_(time_wheel_size),
-        time_hand_(0),
-        time_wheel_event_sptr_(nullptr) {}
+        loop_uptr_(nullptr),
+        time_wheel_uptr_(nullptr) {}
 
 misc::ErrorUptr TcpServer::ConnectionThread::Init(int loop_timeout_ms, int init_evlist_size) {
   loop_uptr_.reset(new EventLoop(loop_timeout_ms));
@@ -180,16 +170,9 @@ misc::ErrorUptr TcpServer::ConnectionThread::Init(int loop_timeout_ms, int init_
     return err_uptr;
   }
 
-  if (time_wheel_.size() > 1) {
-    time_wheel_event_sptr_.reset(new TimeEvent());
-    err_uptr = time_wheel_event_sptr_->Init();
-    if (err_uptr != nullptr) {
-      return err_uptr;
-    }
-
-    time_wheel_event_sptr_->RunEvery(check_idle_interval_seconds_,
-                                     std::bind(&TcpServer::ConnectionThread::TimeWheelFunc, this, std::placeholders::_1));
-    loop_uptr_->UpdateEvent(time_wheel_event_sptr_);
+  time_wheel_uptr_.reset(new TcpConnTimeWheel(loop_uptr_.get()));
+  if (server_ptr_->default_conn_idle_seconds_ > 0) {
+    return time_wheel_uptr_->Init();
   }
 
   return nullptr;
@@ -208,26 +191,19 @@ void TcpServer::ConnectionThread::AddConnection(int connfd, const InetAddress &r
 }
 
 size_t TcpServer::ConnectionThread::ConnectionCount() {
-  return conn_time_wheel_map_.size();
+  return conn_time_hand_map_.size();
 }
 
 void TcpServer::ConnectionThread::RunFunction(const EventLoop::Functor &func) {
   loop_uptr_->AppendFunction(func);
 }
 
-void TcpServer::ConnectionThread::TimeWheelFunc(const misc::SimpleTimeSptr &happened_st_sptr) {
-  time_hand_ = (time_hand_ + 1) % time_wheel_.size();
-
-  if (!time_wheel_[time_hand_].empty()) {
-    time_wheel_[time_hand_].clear();
-  }
-}
 
 void TcpServer::ConnectionThread::DelConnection(int connfd) {
-  auto it = conn_time_wheel_map_.find(connfd);
-  if (it != conn_time_wheel_map_.end()) {
-    time_wheel_[it->second].erase(connfd);
-    conn_time_wheel_map_.erase(connfd);
+  auto it = conn_time_hand_map_.find(connfd);
+  if (it != conn_time_hand_map_.end()) {
+    time_wheel_uptr_->DelConnection(it->second, connfd);
+    conn_time_hand_map_.erase(connfd);
   }
 }
 
@@ -237,21 +213,29 @@ void TcpServer::ConnectionThread::ConnectionDestructCallback(TcpConnection &tcp_
 
 void TcpServer::ConnectionThread::UpdateActiveConnection(const TcpConnectionSptr &tcp_conn_sptr) {
   auto connfd = tcp_conn_sptr->connfd();
-  auto old_hand = conn_time_wheel_map_[connfd];
+  auto old_hand = conn_time_hand_map_[connfd];
+  auto timeout_seconds = tcp_conn_sptr->timeout_seconds();
+  if (timeout_seconds == 0) {
+    timeout_seconds = server_ptr_->default_conn_idle_seconds_;
+  }
 
-  if (old_hand != time_hand_) {
-    conn_time_wheel_map_[connfd] = time_hand_;
-    time_wheel_[time_hand_][connfd] = tcp_conn_sptr;
-    time_wheel_[old_hand].erase(connfd);
+  auto new_hand = time_wheel_uptr_->UpdateConnection(old_hand, connfd, timeout_seconds);
+  if (new_hand == TcpConnTimeWheel::kWheelSize) {
+    std::cout << "tcp_conn is not in time_wheel" << std::endl;
+    return;
+  }
+
+  if (new_hand != old_hand) {
+    conn_time_hand_map_[connfd] = new_hand;
   }
 }
 
 void TcpServer::ConnectionThread::ConnectionReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr) {
-  UpdateActiveConnection(tcp_conn_sptr);
-
   if (server_ptr_->read_callback_ != nullptr) {
     server_ptr_->read_callback_(tcp_conn_sptr, happened_st_sptr);
   }
+
+  UpdateActiveConnection(tcp_conn_sptr);
 }
 
 void TcpServer::ConnectionThread::ThreadFunc() {
@@ -291,18 +275,22 @@ void TcpServer::ConnectionThread::AddConnectionInThread(int connfd, const InetAd
     tcp_conn_sptr->set_error_callback(server_ptr_->error_callback_);
   }
 
-  time_wheel_[time_hand_][connfd] = tcp_conn_sptr;
-  conn_time_wheel_map_[connfd] = time_hand_;
+  auto timeout_seconds = tcp_conn_sptr->timeout_seconds();
+  if (timeout_seconds == 0) {
+    timeout_seconds = server_ptr_->default_conn_idle_seconds_;
+  }
+
+  conn_time_hand_map_[connfd] = time_wheel_uptr_->AddConnection(tcp_conn_sptr, timeout_seconds);
 
   tcp_conn_sptr->ConnectEstablished();
 }
 
 void TcpServer::ConnectionThread::DisconnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr) {
-  DelConnection(tcp_conn_sptr->connfd());
-
   if (server_ptr_->disconnected_callback_ != nullptr) {
     server_ptr_->disconnected_callback_(tcp_conn_sptr, happened_st_sptr);
   }
+
+  DelConnection(tcp_conn_sptr->connfd());
 }
 
 

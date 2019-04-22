@@ -25,7 +25,7 @@ EventLoop::~EventLoop() {
 
 misc::ErrorUptr EventLoop::Init(int init_evlist_size) {
   epoll_uptr_ = misc::MakeUnique<Epoll>(init_evlist_size);
-  auto eu     = epoll_uptr_->Init();
+  auto eu = epoll_uptr_->Init();
   if (eu != nullptr) {
     return eu;
   }
@@ -44,7 +44,7 @@ misc::ErrorUptr EventLoop::Init(int init_evlist_size) {
   return nullptr;
 }
 
-void EventLoop::UpdateEvent(EventSptr event_sptr) {
+void EventLoop::UpdateEvent(const EventSptr &event_sptr) {
   if (event_map_.find(event_sptr->fd()) == event_map_.end()) {
     epoll_uptr_->Add(event_sptr->fd(), event_sptr->events());
   } else {
@@ -91,6 +91,8 @@ misc::ErrorUptr EventLoop::Loop() {
 
     RunFunctions();
   }
+
+  return nullptr;
 }
 
 void EventLoop::Quit() {
