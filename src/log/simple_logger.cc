@@ -11,7 +11,7 @@ namespace cppbox {
 
 namespace log {
 
-SimpleLogger::SimpleLogger(WriterSptr &writer, const FormaterSptr &formater, LogLevel g_level) :
+SimpleLogger::SimpleLogger(const WriterSptr &writer, const FormaterSptr &formater, LogLevel g_level) :
         writer_sptr_(writer),
         formater_sptr_(formater),
         g_level_(g_level) {

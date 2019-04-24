@@ -21,14 +21,13 @@ class FileWriterTest : public ::testing::Test {
 };
 
 TEST_F(FileWriterTest, Write) {
-  for (int i = 0; i < 100; i++) {
+  for (int i = 0; i < 1000; ++i) {
     std::string msg = "hello " + std::to_string(i) + "\n";
     writer_->Write(msg);
   }
 
   sleep(10);
   writer_->Write("write after sleep\n");
-
 }
 
 int main(int argc, char **argv) {

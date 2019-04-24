@@ -12,8 +12,8 @@
 class AsyncWriterTest : public ::testing::Test {
  protected:
   AsyncWriterTest() {
-    cppbox::log::WriterSptr fw = std::make_shared<cppbox::log::FileWriter>("/tmp/cppbox_async_writer_test.log");
-    async_writer_ = new cppbox::log::AsyncWriter(fw, 1024);
+    cppbox::log::WriterSptr fw = std::make_shared<cppbox::log::FileWriter>("/tmp/cppbox_async_writer_test.log", 4096);
+    async_writer_ = new cppbox::log::AsyncWriter(fw);
   }
 
   ~AsyncWriterTest() override {
@@ -24,7 +24,7 @@ class AsyncWriterTest : public ::testing::Test {
 };
 
 TEST_F(AsyncWriterTest, Write) {
-  for (int i = 0; i < 1000; i++) {
+  for (int i = 0; i < 1000; ++i) {
     std::string msg = "hello " + std::to_string(i) + "\n";
     async_writer_->Write(msg.c_str(), msg.size());
   }

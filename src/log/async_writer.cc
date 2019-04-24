@@ -16,7 +16,7 @@ namespace cppbox {
 namespace log {
 
 
-AsyncWriter::AsyncWriter(WriterSptr &writer, size_t flush_size, int flush_seconds) :
+AsyncWriter::AsyncWriter(const WriterSptr &writer, size_t flush_size, int flush_seconds) :
         writer_sptr_(writer),
         flush_size_(flush_size),
         cur_buffer_uptr_(misc::MakeUnique<misc::SimpleBuffer>(flush_size)),
@@ -33,7 +33,7 @@ size_t AsyncWriter::Write(const std::string &msg) {
   return Write(msg.c_str(), msg.size());
 }
 
-int AsyncWriter::Flush() {
+size_t AsyncWriter::Flush() {
   return writer_sptr_->Flush();
 }
 

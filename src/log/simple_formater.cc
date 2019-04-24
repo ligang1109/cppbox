@@ -15,29 +15,26 @@ namespace cppbox {
 namespace log {
 
 
-SimpleFormater::SimpleFormater(const std::string &log_id, const std::string &address) :
-        log_id_(log_id),
-        address_(address),
+SimpleFormater::SimpleFormater(const char *time_layout) :
+        time_layout_(time_layout),
         last_fmt_time_uptr_(misc::NowTimeUptr()),
         last_fmt_seconds_(last_fmt_time_uptr_->Sec()),
-        last_fmt_seconds_str_(last_fmt_time_uptr_->Format()) {}
+        last_fmt_seconds_str_(last_fmt_time_uptr_->Format(time_layout_.c_str())) {}
 
 std::string SimpleFormater::Format(LogLevel level, const std::string &msg) {
-  last_fmt_time_uptr_->Update();
-
   {
     std::lock_guard<std::mutex> lock(mutex_);
 
+    last_fmt_time_uptr_->Update();
+
     if (last_fmt_seconds_ != last_fmt_time_uptr_->Sec()) {
-      last_fmt_seconds_     = last_fmt_time_uptr_->Sec();
-      last_fmt_seconds_str_ = last_fmt_time_uptr_->Format();
+      last_fmt_seconds_ = last_fmt_time_uptr_->Sec();
+      last_fmt_seconds_str_ = last_fmt_time_uptr_->Format(time_layout_.c_str());
     }
   }
 
   return kLogLevelMsgList[static_cast<int>(level)] + "\t" +
-         log_id_ + "\t" +
-         address_ + "\t" +
-         "[" + last_fmt_seconds_str_ + "." + std::to_string(last_fmt_time_uptr_->Usec()) + "]\t" +
+         "[" + last_fmt_seconds_str_ + "]\t" +
          msg + "\n";
 }
 

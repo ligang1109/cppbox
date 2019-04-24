@@ -7,7 +7,6 @@
 #include "log/base.h"
 #include "log/console_writer.h"
 #include "log/file_writer.h"
-#include "log/buffer_writer.h"
 #include "log/async_writer.h"
 #include "log/simple_formater.h"
 #include "log/simple_logger.h"
@@ -16,18 +15,15 @@
 class SimpleLoggerTest : public ::testing::Test {
  protected:
   SimpleLoggerTest() {
-    std::string log_id("abcdefg");
-    std::string address("127.0.0.1:12345");
-    cppbox::log::FormaterSptr fr = std::make_shared<cppbox::log::SimpleFormater>(log_id, address);
+    cppbox::log::FormaterSptr fr = std::make_shared<cppbox::log::SimpleFormater>();
 
     cppbox::log::WriterSptr cw = std::make_shared<cppbox::log::ConsoleWriter>();
     clogger_ = new cppbox::log::SimpleLogger(cw, fr, cppbox::log::LogLevel::kDEBUG);
 
     cppbox::log::WriterSptr fw = std::make_shared<cppbox::log::FileWriter>("/tmp/cppbox_simple_logger_buffer_test.log");
-    cppbox::log::WriterSptr bw = std::make_shared<cppbox::log::BufferWriter>(fw);
-    flogger_ = new cppbox::log::SimpleLogger(bw, fr, cppbox::log::LogLevel::kDEBUG);
+    flogger_ = new cppbox::log::SimpleLogger(fw, fr, cppbox::log::LogLevel::kDEBUG);
 
-    cppbox::log::WriterSptr afw = std::make_shared<cppbox::log::FileWriter>("/tmp/cppbox_simple_logger_async_test.log");
+    cppbox::log::WriterSptr afw = std::make_shared<cppbox::log::FileWriter>("/tmp/cppbox_simple_logger_async_test.log", 0);
     cppbox::log::WriterSptr aw = std::make_shared<cppbox::log::AsyncWriter>(afw);
     alogger_ = new cppbox::log::SimpleLogger(aw, fr, cppbox::log::LogLevel::kDEBUG);
   }

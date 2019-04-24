@@ -1,7 +1,6 @@
 set(LOG_HEADER_LIST
         ${LOG_SRC_DIR}/async_writer.h
         ${LOG_SRC_DIR}/base.h
-        ${LOG_SRC_DIR}/buffer_writer.h
         ${LOG_SRC_DIR}/console_writer.h
         ${LOG_SRC_DIR}/file_writer.h
         ${LOG_SRC_DIR}/simple_formater.h
@@ -15,7 +14,6 @@ install(FILES ${LOG_HEADER_LIST}
 
 set(LOG_SRC_LIST
         ${LOG_SRC_DIR}/async_writer.cc
-        ${LOG_SRC_DIR}/buffer_writer.cc
         ${LOG_SRC_DIR}/console_writer.cc
         ${LOG_SRC_DIR}/file_writer.cc
         ${LOG_SRC_DIR}/simple_formater.cc

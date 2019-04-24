@@ -10,27 +10,35 @@
 class SimpleFormaterTest : public ::testing::Test {
  protected:
   SimpleFormaterTest() {
-    formater_ = new cppbox::log::SimpleFormater("abcdefg", "127.0.0.1:12345");
   }
 
   ~SimpleFormaterTest() override {
-    delete formater_;
   }
 
-  cppbox::log::FormaterInterface *formater_;
 };
 
 TEST_F(SimpleFormaterTest, Format) {
   std::string msg("test formater");
+  
+  cppbox::log::SimpleFormater f1;
+  std::cout << f1.Format(cppbox::log::LogLevel::kDEBUG, msg);
+  std::cout << f1.Format(cppbox::log::LogLevel::kINFO, msg);
+  std::cout << f1.Format(cppbox::log::LogLevel::kNOTICE, msg);
+  std::cout << f1.Format(cppbox::log::LogLevel::kWARNING, msg);
+  std::cout << f1.Format(cppbox::log::LogLevel::kERROR, msg);
+  std::cout << f1.Format(cppbox::log::LogLevel::kCRITICAL, msg);
+  std::cout << f1.Format(cppbox::log::LogLevel::kALERT, msg);
+  std::cout << f1.Format(cppbox::log::LogLevel::kEMERGENCY, msg);
 
-  std::cout << formater_->Format(cppbox::log::LogLevel::kDEBUG, msg);
-  std::cout << formater_->Format(cppbox::log::LogLevel::kINFO, msg);
-  std::cout << formater_->Format(cppbox::log::LogLevel::kNOTICE, msg);
-  std::cout << formater_->Format(cppbox::log::LogLevel::kWARNING, msg);
-  std::cout << formater_->Format(cppbox::log::LogLevel::kERROR, msg);
-  std::cout << formater_->Format(cppbox::log::LogLevel::kCRITICAL, msg);
-  std::cout << formater_->Format(cppbox::log::LogLevel::kALERT, msg);
-  std::cout << formater_->Format(cppbox::log::LogLevel::kEMERGENCY, msg);
+  cppbox::log::SimpleFormater f2("%Y%m%d%H%M%S");
+  std::cout << f2.Format(cppbox::log::LogLevel::kDEBUG, msg);
+  std::cout << f2.Format(cppbox::log::LogLevel::kINFO, msg);
+  std::cout << f2.Format(cppbox::log::LogLevel::kNOTICE, msg);
+  std::cout << f2.Format(cppbox::log::LogLevel::kWARNING, msg);
+  std::cout << f2.Format(cppbox::log::LogLevel::kERROR, msg);
+  std::cout << f2.Format(cppbox::log::LogLevel::kCRITICAL, msg);
+  std::cout << f2.Format(cppbox::log::LogLevel::kALERT, msg);
+  std::cout << f2.Format(cppbox::log::LogLevel::kEMERGENCY, msg);
 }
 
 int main(int argc, char **argv) {

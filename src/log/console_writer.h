@@ -23,7 +23,7 @@ class ConsoleWriter : public WriterInterface, public misc::NonCopyable {
 
   size_t Write(const std::string &msg) override;
 
-  int Flush() override {}
+  size_t Flush() override {}
 
  private:
   std::mutex mutex_;

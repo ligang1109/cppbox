@@ -21,7 +21,7 @@ namespace log {
 
 class AsyncWriter : public WriterInterface, public misc::NonCopyable {
  public:
-  explicit AsyncWriter(WriterSptr &writer, size_t flush_size = 4096 * 1000, int flush_seconds = 3);
+  explicit AsyncWriter(const WriterSptr &writer, size_t flush_size = 4096, int flush_seconds = 3);
 
   ~AsyncWriter() override;
 
@@ -29,23 +29,23 @@ class AsyncWriter : public WriterInterface, public misc::NonCopyable {
 
   size_t Write(const std::string &msg) override;
 
-  int Flush() override;
+  size_t Flush() override;
 
  private:
   void WriteThreadFunc(int flush_seconds);
 
   WriterSptr writer_sptr_;
-  size_t     flush_size_;
+  size_t flush_size_;
 
-  misc::SimpleBufferUptr              cur_buffer_uptr_;
-  misc::SimpleBufferUptr              next_buffer_uptr_;
+  misc::SimpleBufferUptr cur_buffer_uptr_;
+  misc::SimpleBufferUptr next_buffer_uptr_;
   std::vector<misc::SimpleBufferUptr> buffer_list_;
 
-  std::mutex              mutex_;
+  std::mutex mutex_;
   std::condition_variable cond_;
 
   volatile bool running_;
-  std::thread   write_thread_;
+  std::thread write_thread_;
 };
 
 

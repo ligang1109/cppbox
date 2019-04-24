@@ -11,6 +11,7 @@
 
 #include "misc/non_copyable.h"
 #include "misc/simple_time.h"
+#include "misc/simple_buffer.h"
 
 namespace cppbox {
 
@@ -19,7 +20,7 @@ namespace log {
 
 class FileWriter : public WriterInterface, public misc::NonCopyable {
  public:
-  explicit FileWriter(const std::string &path);
+  explicit FileWriter(const std::string &path, size_t bufsize = 4096);
 
   ~FileWriter() override;
 
@@ -27,18 +28,26 @@ class FileWriter : public WriterInterface, public misc::NonCopyable {
 
   size_t Write(const std::string &msg) override;
 
-  int Flush() override;
+  size_t Flush() override;
 
  private:
-  int FlushUnlocked();
+  int OpenFile(const char *path);
+  
+  size_t FlushUnlocked();
+
+  size_t WriteUnlocked(const char *msg, size_t len);
+
+  void EnsureFileExist();
 
   std::string path_;
-  FILE *fp_;
+  int fd_;
 
   misc::SimpleTimeUptr now_time_uptr_;
   time_t last_write_seconds_;
 
   std::mutex mutex_;
+
+  misc::SimpleBufferUptr buffer_uptr_;
 };
 
 

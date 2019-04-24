@@ -18,23 +18,21 @@ namespace log {
 
 class SimpleFormater : public FormaterInterface {
  public:
-  explicit SimpleFormater(const std::string &log_id = "-", const std::string &address = "-");
+  explicit SimpleFormater(const char *time_layout = misc::kGeneralTimeLayout1);
 
   std::string Format(LogLevel level, const std::string &msg) override;
 
  private:
-  std::string log_id_;
-  std::string address_;
+  std::string time_layout_;
 
   misc::SimpleTimeUptr last_fmt_time_uptr_;
-  time_t               last_fmt_seconds_;
-  std::string          last_fmt_seconds_str_;
-  std::mutex           mutex_;
+  time_t last_fmt_seconds_;
+  std::string last_fmt_seconds_str_;
+  std::mutex mutex_;
 };
 
 
 }
-
 
 }
 
