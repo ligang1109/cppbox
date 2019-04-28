@@ -6,11 +6,14 @@
 #define CPPBOX_NET_HTTP_SERVER_H
 
 #include "tcp_server.h"
+
 #include "http_parse.h"
 #include "http_response.h"
 #include "http_request.h"
 
 #include "misc/non_copyable.h"
+
+#include "log/base.h"
 
 
 namespace cppbox {
@@ -18,16 +21,16 @@ namespace cppbox {
 namespace net {
 
 enum class HttpConnectionStatus {
-  kWaitRequest = 1,
-  kParseRequest = 2,
+  kWaitRequest          = 1,
+  kParseRequest         = 2,
   KParseRequestComplete = 3,
-  kProcessRequest = 4,
-  kWaitClose = 5,
+  kProcessRequest       = 4,
+  kWaitClose            = 5,
 };
 
-class HttpConnection : public TcpConnection {
+class HttpConnection : misc::NonCopyable {
  public:
-  explicit HttpConnection(int connfd, const InetAddress &address, EventLoop *loop_ptr, size_t read_protected_size = 4096);
+  HttpConnection();
 
   HttpConnectionStatus hstatus();
 
@@ -37,27 +40,27 @@ class HttpConnection : public TcpConnection {
 
   HttpResponse *Response();
 
-  void ParseRequest();
+  bool ParseRequest(misc::SimpleBuffer *rbuf_ptr);
 
-  void RequestProcessComplete();
+  void SendError(const TcpConnectionSptr &tcp_conn_sptr, int code, const std::string &msg);
 
-  void SendError(int code, const std::string &msg);
+  void SendResponse(const TcpConnectionSptr &tcp_conn_sptr);
 
-  void SendResponse();
+  void RequestProcessComplete(const TcpConnectionSptr &tcp_conn_sptr);
 
  private:
   HttpConnectionStatus hstatus_;
 
   HttpParseDataUptr pdata_uptr_;
-  HttpParserUptr parser_uptr_;
+  HttpParserUptr    parser_uptr_;
 
-  HttpRequestUptr request_uptr_;
+  HttpRequestUptr  request_uptr_;
   HttpResponseUptr response_uptr_;
 };
 
 using HttpConnectionSptr = std::shared_ptr<HttpConnection>;
 
-using HttpHandleFunc = std::function<void(const HttpConnectionSptr &)>;
+using HttpHandleFunc = std::function<void(const TcpConnectionSptr &, const HttpConnectionSptr &)>;
 
 class HttpServer : public misc::NonCopyable {
  public:
@@ -70,18 +73,20 @@ class HttpServer : public misc::NonCopyable {
 
   void AddHandleFunc(const std::string &path, const HttpHandleFunc &hf);
 
+  void SetLogger(log::LoggerInterface *logger_ptr);
+
  private:
-  HttpConnectionSptr NewConnection(int connfd, const InetAddress &remote_addr, EventLoop *loop_ptr);
+  void ConnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr);
 
   void ReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr);
 
   void WriteCompleteCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr);
 
-  void ProcessRequest(const HttpConnectionSptr &http_conn_sptr);
+  void ProcessRequest(const TcpConnectionSptr &tcp_conn_sptr, const HttpConnectionSptr &http_conn_sptr);
 
   TcpServer server_;
 
-  std::map<std::string, HttpHandleFunc> handle_list_;
+  std::map<std::string, HttpHandleFunc> handle_map_;
 };
 
 

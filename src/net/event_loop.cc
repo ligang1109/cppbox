@@ -25,7 +25,7 @@ EventLoop::~EventLoop() {
 
 misc::ErrorUptr EventLoop::Init(int init_evlist_size) {
   epoll_uptr_ = misc::MakeUnique<Epoll>(init_evlist_size);
-  auto eu = epoll_uptr_->Init();
+  auto eu     = epoll_uptr_->Init();
   if (eu != nullptr) {
     return eu;
   }
@@ -45,25 +45,29 @@ misc::ErrorUptr EventLoop::Init(int init_evlist_size) {
 }
 
 void EventLoop::UpdateEvent(const EventSptr &event_sptr) {
-  if (event_map_.find(event_sptr->fd()) == event_map_.end()) {
-    epoll_uptr_->Add(event_sptr->fd(), event_sptr->events());
-  } else {
-    epoll_uptr_->Mod(event_sptr->fd(), event_sptr->events());
+  auto fd = event_sptr->fd();
+  auto it = event_map_.find(fd);
+  if (it == event_map_.end()) {
+    epoll_uptr_->Add(fd, event_sptr->events());
+    event_map_.emplace(fd, event_sptr);
+    return;
   }
 
-  event_map_[event_sptr->fd()] = event_sptr;
+  epoll_uptr_->Mod(fd, event_sptr->events());
+  it->second = event_sptr;
 }
 
 EventSptr EventLoop::GetEvent(int fd) {
-  if (event_map_.find(fd) == event_map_.end()) {
+  auto it = event_map_.find(fd);
+  if (it == event_map_.end()) {
     return nullptr;
   }
 
-  return event_map_[fd];
+  return it->second;
 }
 
 void EventLoop::DelEvent(int fd) {
-  epoll_uptr_->Del(fd, 0);
+  epoll_uptr_->Del(fd);
   event_map_.erase(fd);
 }
 
@@ -78,13 +82,13 @@ misc::ErrorUptr EventLoop::Loop() {
       return eu;
     }
 
-    auto st_sptr = misc::NowTimeSptr();
+    auto happened_st_sptr = misc::NowTimeSptr();
 
     handling_events_ = true;
     for (auto &ready :ready_list) {
       auto it = event_map_.find(ready.first);
       if (it != event_map_.end()) {
-        HandleEvent(it->second.get(), ready.second, st_sptr);
+        HandleEvent(it->second, ready.second, happened_st_sptr);
       }
     }
     handling_events_ = false;
@@ -121,9 +125,9 @@ void EventLoop::WakeupCallback(const misc::SimpleTimeSptr &happened_st_sptr) {
   ::read(wakeup_fd_, &u, sizeof(uint64_t));
 }
 
-void EventLoop::HandleEvent(Event *event_p, uint32_t ready_events, const misc::SimpleTimeSptr &happened_st_sptr) {
+void EventLoop::HandleEvent(const EventSptr &event_sptr, uint32_t ready_events, const misc::SimpleTimeSptr &happened_st_sptr) {
   if (ready_events & Event::kErrorEvents) {
-    auto ecb = event_p->error_callback();
+    auto ecb = event_sptr->error_callback();
     if (ecb) {
       ecb(happened_st_sptr);
       return;
@@ -131,14 +135,14 @@ void EventLoop::HandleEvent(Event *event_p, uint32_t ready_events, const misc::S
   }
 
   if (ready_events & Event::kReadEvents) {
-    auto rcb = event_p->read_callback();
+    auto rcb = event_sptr->read_callback();
     if (rcb) {
       rcb(happened_st_sptr);
     }
   }
 
   if (ready_events & Event::kWriteEvents) {
-    auto wcb = event_p->write_callback();
+    auto wcb = event_sptr->write_callback();
     if (wcb) {
       wcb(happened_st_sptr);
     }

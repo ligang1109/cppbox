@@ -22,7 +22,8 @@ TcpConnection::TcpConnection(int connfd, const InetAddress &address, EventLoop *
         rw_event_sptr_(std::make_shared<Event>(connfd)),
         read_protected_size_(read_protected_size),
         read_buf_uptr_(new misc::SimpleBuffer()),
-        write_buf_uptr_(new misc::SimpleBuffer()) {}
+        write_buf_uptr_(new misc::SimpleBuffer()),
+        data_sptr_(nullptr) {}
 
 TcpConnection::~TcpConnection() {
   if (status_ != ConnectionStatus::kDisconnected) {
@@ -46,6 +47,14 @@ std::string TcpConnection::remote_ip() {
 
 uint16_t TcpConnection::remote_port() {
   return remote_port_;
+}
+
+std::string TcpConnection::trace_id() {
+  return trace_id_;
+}
+
+void TcpConnection::set_trace_id(const std::string &trace_id) {
+  trace_id_ = trace_id;
 }
 
 EventLoop *TcpConnection::loop_ptr() {
@@ -96,12 +105,21 @@ void TcpConnection::set_destruct_callback(const DestructCallback &cb) {
   destruct_callback_ = cb;
 }
 
+void TcpConnection::set_data_sptr(const TcpConnection::DataSptr &data_sptr) {
+  data_sptr_ = data_sptr;
+}
+
+TcpConnection::DataSptr TcpConnection::data_sptr() {
+  return data_sptr_;
+}
+
 void TcpConnection::ConnectEstablished(const misc::SimpleTimeSptr &happened_st_sptr) {
-  status_ = ConnectionStatus::kConnected;
+  status_              = ConnectionStatus::kConnected;
   connected_time_sptr_ = (happened_st_sptr == nullptr) ? misc::NowTimeSptr() : happened_st_sptr;
 
-  rw_event_sptr_->set_events(Event::kReadEvents);
+  rw_event_sptr_->set_events(Event::kReadEvents | Event::kErrorEvents);
   rw_event_sptr_->set_read_callback(std::bind(&TcpConnection::ReadFdCallback, this, std::placeholders::_1));
+  rw_event_sptr_->set_error_callback(std::bind(&TcpConnection::ErrorFdCallback, this, std::placeholders::_1));
   loop_ptr_->UpdateEvent(rw_event_sptr_);
 
   if (connected_callback_) {
@@ -156,8 +174,11 @@ ssize_t TcpConnection::Send(char *data, size_t len) {
 
 ssize_t TcpConnection::SendWriteBuffer() {
   auto readable = write_buf_uptr_->Readable();
-  ssize_t n;
+  if (readable == 0) {
+    return 0;
+  }
 
+  ssize_t n;
   while (true) {
     n = ::write(connfd_, write_buf_uptr_->ReadBegin(), readable);
     if (n == -1) {
@@ -210,9 +231,9 @@ void TcpConnection::ReadFdCallback(const misc::SimpleTimeSptr &happened_st_sptr)
 
   struct iovec iov[2];
   iov[0].iov_base = read_buf_uptr_->ReadBegin();
-  iov[0].iov_len = writeable;
+  iov[0].iov_len  = writeable;
   iov[1].iov_base = extrabuf;
-  iov[1].iov_len = sizeof extrabuf;
+  iov[1].iov_len  = sizeof extrabuf;
 
   ssize_t n;
   while (true) {
@@ -258,45 +279,47 @@ void TcpConnection::ReadFdCallback(const misc::SimpleTimeSptr &happened_st_sptr)
 
 void TcpConnection::WriteFdCallback(const misc::SimpleTimeSptr &happened_st_sptr) {
   auto readable = write_buf_uptr_->Readable();
-  ssize_t n;
+  if (readable > 0) {
+    ssize_t n;
+    while (true) {
+      n = ::write(connfd_, write_buf_uptr_->ReadBegin(), readable);
+      if (n == -1) {
+        if (errno == EINTR) {
+          continue;
+        }
 
-  while (true) {
-    n = ::write(connfd_, write_buf_uptr_->ReadBegin(), readable);
-    if (n == -1) {
-      if (errno == EINTR) {
-        continue;
-      }
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+          return;
+        }
 
-      if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        if (error_callback_) {
+          error_callback_(shared_from_this(), happened_st_sptr);
+        }
+
+        ForceClose();
         return;
       }
+      break;
+    }
 
-      if (error_callback_) {
-        error_callback_(shared_from_this(), happened_st_sptr);
+    write_buf_uptr_->AddReadIndex(static_cast<size_t>(n));
+
+    if (n < readable) {
+      return;
+    }
+
+    if (write_complete_callback_) {
+      write_complete_callback_(shared_from_this(), happened_st_sptr);
+      if (EnsureCloseAfterCallback()) {
+        return;
       }
-
-      ForceClose();
-      return;
     }
-    break;
-  }
 
-  write_buf_uptr_->AddReadIndex(static_cast<size_t>(n));
-
-  if (n < readable) {
-    return;
-  }
-
-  if (write_complete_callback_) {
-    write_complete_callback_(shared_from_this(), happened_st_sptr);
-    if (EnsureCloseAfterCallback()) {
+    if (write_buf_uptr_->Readable() > 0) {
       return;
     }
   }
 
-  if (write_buf_uptr_->Readable() > 0) {
-    return;
-  }
 
   if (status_ == ConnectionStatus::kDisconnecting) {
     ForceClose();
@@ -305,6 +328,14 @@ void TcpConnection::WriteFdCallback(const misc::SimpleTimeSptr &happened_st_sptr
 
   rw_event_sptr_->DelEvents(Event::kWriteEvents);
   loop_ptr_->UpdateEvent(rw_event_sptr_);
+}
+
+void TcpConnection::ErrorFdCallback(const misc::SimpleTimeSptr &happened_st_sptr) {
+  if (error_callback_) {
+    error_callback_(shared_from_this(), happened_st_sptr);
+  }
+
+  ForceClose();
 }
 
 void TcpConnection::EnsureWriteEvents() {
@@ -327,12 +358,15 @@ bool TcpConnection::EnsureCloseAfterCallback() {
 void TcpConnection::GracefulClose(const misc::SimpleTimeSptr &happened_st_sptr) {
   status_ = ConnectionStatus::kDisconnecting;
 
+  rw_event_sptr_->DelEvents(Event::kReadEvents);
+  loop_ptr_->UpdateEvent(rw_event_sptr_);
   if (::shutdown(connfd_, SHUT_RD) == -1) {
     ForceClose(happened_st_sptr);
     return;
   }
 
   if (write_buf_uptr_->Readable() > 0) {
+    EnsureWriteEvents();
     return;
   }
 

@@ -5,8 +5,6 @@
 #include "async_writer.h"
 
 #include <functional>
-#include <iostream>
-#include <zconf.h>
 
 #include "misc/misc.h"
 

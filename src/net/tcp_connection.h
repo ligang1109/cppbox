@@ -20,12 +20,12 @@ namespace cppbox {
 namespace net {
 
 enum class ConnectionStatus {
-  kNotset = 0,
-  kDisconnected = 1,
-  kConnecting = 2,
-  kConnected = 3,
+  kNotset            = 0,
+  kDisconnected      = 1,
+  kConnecting        = 2,
+  kConnected         = 3,
   kPrepareDisconnect = 4,
-  kDisconnecting = 5,
+  kDisconnecting     = 5,
 };
 
 
@@ -38,6 +38,7 @@ class TcpConnection : public misc::NonCopyable,
                       public std::enable_shared_from_this<TcpConnection> {
  public:
   using DestructCallback = std::function<void(TcpConnection &)>;
+  using DataSptr = std::shared_ptr<void>;
 
   explicit TcpConnection(int connfd, const InetAddress &address, EventLoop *loop_ptr, size_t read_protected_size = 4096);
 
@@ -48,6 +49,10 @@ class TcpConnection : public misc::NonCopyable,
   std::string remote_ip();
 
   uint16_t remote_port();
+
+  std::string trace_id();
+
+  void set_trace_id(const std::string &trace_id);
 
   EventLoop *loop_ptr();
 
@@ -73,6 +78,10 @@ class TcpConnection : public misc::NonCopyable,
 
   void set_destruct_callback(const DestructCallback &cb);
 
+  void set_data_sptr(const DataSptr &data_sptr);
+
+  DataSptr data_sptr();
+
   void ConnectEstablished(const misc::SimpleTimeSptr &happened_st_sptr = nullptr);
 
   void Close();
@@ -92,6 +101,8 @@ class TcpConnection : public misc::NonCopyable,
 
   void WriteFdCallback(const misc::SimpleTimeSptr &happened_st_sptr);
 
+  void ErrorFdCallback(const misc::SimpleTimeSptr &happened_st_sptr);
+
   void EnsureWriteEvents();
 
   bool EnsureCloseAfterCallback();
@@ -100,20 +111,22 @@ class TcpConnection : public misc::NonCopyable,
 
   void ForceClose(const misc::SimpleTimeSptr &happened_st_sptr = nullptr);
 
-  int connfd_;
+  int         connfd_;
   std::string remote_ip_;
-  uint16_t remote_port_;
-  EventLoop *loop_ptr_;
+  uint16_t    remote_port_;
+  std::string trace_id_;
+
+  EventLoop        *loop_ptr_;
   ConnectionStatus status_;
-  EventSptr rw_event_sptr_;
-  size_t read_protected_size_;
+  EventSptr        rw_event_sptr_;
+  size_t           read_protected_size_;
 
   misc::SimpleBufferUptr read_buf_uptr_;
   misc::SimpleBufferUptr write_buf_uptr_;
 
   misc::SimpleTimeSptr connected_time_sptr_;
   misc::SimpleTimeSptr last_receive_time_sptr_;
-  uint16_t timeout_seconds_;
+  uint16_t             timeout_seconds_;
 
   TcpConnCallback connected_callback_;
   TcpConnCallback disconnected_callback_;
@@ -122,6 +135,8 @@ class TcpConnection : public misc::NonCopyable,
   TcpConnCallback error_callback_;
 
   DestructCallback destruct_callback_;
+
+  DataSptr data_sptr_;
 };
 
 

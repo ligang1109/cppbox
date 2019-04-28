@@ -25,7 +25,6 @@ std::unique_ptr<T> MakeUnique(Ts &&...params) {
 
 ErrorUptr SetFdNonBlock(int fd);
 
-
 }
 
 }

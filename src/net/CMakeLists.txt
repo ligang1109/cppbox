@@ -5,6 +5,7 @@ set(NET_HEADER_LIST
         ${NET_SRC_DIR}/event.h
         ${NET_SRC_DIR}/event_loop.h
         ${NET_SRC_DIR}/net.h
+        ${NET_SRC_DIR}/trace_id_genter.h
         ${NET_SRC_DIR}/tcp_connection.h
         ${NET_SRC_DIR}/tcp_conn_time_wheel.h
         ${NET_SRC_DIR}/tcp_server.h
@@ -23,6 +24,7 @@ set(NET_SRC_LIST
         ${NET_SRC_DIR}/event.cc
         ${NET_SRC_DIR}/event_loop.cc
         ${NET_SRC_DIR}/net.cc
+        ${NET_SRC_DIR}/trace_id_genter.cc
         ${NET_SRC_DIR}/tcp_connection.cc
         ${NET_SRC_DIR}/tcp_conn_time_wheel.cc
         ${NET_SRC_DIR}/tcp_server.cc

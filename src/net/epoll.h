@@ -30,7 +30,7 @@ class Epoll {
 
   misc::ErrorUptr Mod(int fd, uint32_t events);
 
-  misc::ErrorUptr Del(int fd, uint32_t events);
+  misc::ErrorUptr Del(int fd);
 
   misc::ErrorUptr Wait(ReadyList *ready_list, int timeout_ms);
 

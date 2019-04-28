@@ -32,7 +32,7 @@ class FileWriter : public WriterInterface, public misc::NonCopyable {
 
  private:
   int OpenFile(const char *path);
-  
+
   size_t FlushUnlocked();
 
   size_t WriteUnlocked(const char *msg, size_t len);
@@ -49,6 +49,8 @@ class FileWriter : public WriterInterface, public misc::NonCopyable {
 
   misc::SimpleBufferUptr buffer_uptr_;
 };
+
+static FileWriter debug_writer("/tmp/cppbox_debug_writer.log", 0);
 
 
 }

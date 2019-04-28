@@ -3,6 +3,7 @@
 
 .idea
 cmake-build-debug
-mybuild
+cbuild
+ubuild
 
 *.o

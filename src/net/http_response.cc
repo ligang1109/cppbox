@@ -4,6 +4,8 @@
 
 #include "http_response.h"
 
+#include "log/file_writer.h"
+
 
 namespace cppbox {
 
@@ -23,7 +25,7 @@ void HttpResponse::SetStatus(int code, const std::string &msg) {
 }
 
 void HttpResponse::AddHeader(const std::string &field, const std::string &value) {
-  header_map_[field] = value;
+  header_map_.emplace(field, value);
 }
 
 size_t HttpResponse::AppendToBuffer(misc::SimpleBuffer *sbuf_ptr) {

@@ -30,6 +30,7 @@ TEST_F(HttpParseTest, Request) {
                      "User-Agent: curl/7.18.0\r\n"
                      "Accept: */*\r\n"
                      "Content-Length: 5\r\n"
+                     "Proxy: \r\n"
                      "Content-Type: application/x-www-form-urlencoded\r\n"
                      "\r\n"
                      "hello";

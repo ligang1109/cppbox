@@ -4,8 +4,6 @@
 
 #include "tcp_server.h"
 
-#include <iostream>
-
 #include "misc/misc.h"
 
 
@@ -23,12 +21,22 @@ int TcpConnectionThreadId() {
 TcpServer::TcpServer(uint16_t port, const std::string &ip, uint16_t default_conn_idle_seconds) :
         ip_(ip),
         port_(port),
+        logger_ptr_(nullptr),
+        trace_id_genter_uptr_(new TraceIdGenter()),
         loop_uptr_(nullptr),
         dispatch_index_(0),
         default_conn_idle_seconds_(default_conn_idle_seconds) {}
 
-void TcpServer::set_new_conn_func(const NewConnectionFunc &func) {
-  new_conn_func_ = func;
+std::string TcpServer::ip() {
+  return ip_;
+}
+
+uint16_t TcpServer::port() {
+  return port_;
+}
+
+void TcpServer::set_logger_ptr(log::LoggerInterface *logger_ptr) {
+  logger_ptr_ = logger_ptr;
 }
 
 void TcpServer::set_connected_callback(const TcpConnCallback &cb) {
@@ -82,14 +90,18 @@ misc::ErrorUptr TcpServer::Init(int conn_thread_cnt, int conn_thread_loop_timeou
 
 
 misc::ErrorUptr TcpServer::Start() {
-  if (new_conn_func_ == nullptr) {
-    new_conn_func_ = std::bind(
-            &TcpServer::DefaultNewConnection,
-            this,
-            std::placeholders::_1,
-            std::placeholders::_2,
-            std::placeholders::_3);
+  if (logger_ptr_ == nullptr) {
+    logger_ptr_ = new log::NullLogger();
   }
+
+//  if (new_conn_func_ == nullptr) {
+//    new_conn_func_ = std::bind(
+//            &TcpServer::DefaultNewConnection,
+//            this,
+//            std::placeholders::_1,
+//            std::placeholders::_2,
+//            std::placeholders::_3);
+//  }
 
   for (auto &conn_thread_uptr : conn_thread_list_) {
     conn_thread_uptr->Start();
@@ -99,7 +111,7 @@ misc::ErrorUptr TcpServer::Start() {
 }
 
 size_t TcpServer::ConnectionCount() {
-  size_t cnt = 0;
+  size_t    cnt = 0;
   for (auto &conn_thread_uptr : conn_thread_list_) {
     cnt += conn_thread_uptr->ConnectionCount();
   }
@@ -140,19 +152,19 @@ void TcpServer::ListenCallback(const misc::SimpleTimeSptr &happened_st_sptr) {
         continue;
       }
 
-      std::cout << "accept error: " + cppbox::misc::NewErrorUptrByErrno()->String() << std::endl;
+      if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        return;
+      }
+
+      logger_ptr_->Error("accept error: " + cppbox::misc::NewErrorUptrByErrno()->String());
       return;
     }
 
     break;
   }
 
-  conn_thread_list_[dispatch_index_]->AddConnection(connfd, raddr, happened_st_sptr);
+  conn_thread_list_[dispatch_index_]->AddConnection(connfd, raddr, happened_st_sptr, trace_id_genter_uptr_->GenId(raddr));
   dispatch_index_ = (dispatch_index_ + 1) % conn_thread_list_.size();
-}
-
-TcpConnectionSptr TcpServer::DefaultNewConnection(int connfd, const cppbox::net::InetAddress &remote_addr, EventLoop *loop_ptr) {
-  return std::make_shared<TcpConnection>(connfd, remote_addr, loop_ptr);
 }
 
 
@@ -184,9 +196,9 @@ void TcpServer::ConnectionThread::Start() {
                                     ));
 }
 
-void TcpServer::ConnectionThread::AddConnection(int connfd, const InetAddress &remote_addr, const misc::SimpleTimeSptr &happened_st_sptr) {
+void TcpServer::ConnectionThread::AddConnection(int connfd, const InetAddress &remote_addr, const misc::SimpleTimeSptr &happened_st_sptr, const std::string &trace_id) {
   loop_uptr_->AppendFunction(
-          std::bind(&TcpServer::ConnectionThread::AddConnectionInThread, this, connfd, remote_addr, happened_st_sptr)
+          std::bind(&TcpServer::ConnectionThread::AddConnectionInThread, this, connfd, remote_addr, happened_st_sptr, trace_id)
                             );
 }
 
@@ -207,13 +219,17 @@ void TcpServer::ConnectionThread::DelConnection(int connfd) {
   }
 }
 
-void TcpServer::ConnectionThread::ConnectionDestructCallback(TcpConnection &tcp_conn) {
-  DelConnection(tcp_conn.connfd());
-}
 
 void TcpServer::ConnectionThread::UpdateActiveConnection(const TcpConnectionSptr &tcp_conn_sptr) {
   auto connfd = tcp_conn_sptr->connfd();
-  auto old_hand = conn_time_hand_map_[connfd];
+  auto it     = conn_time_hand_map_.find(connfd);
+  if (it == conn_time_hand_map_.end()) {
+    server_ptr_->logger_ptr_->Error("tcp_conn is not in conn_time_hand_map");
+    tcp_conn_sptr->Close();
+    return;
+  }
+
+  auto old_hand        = it->second;
   auto timeout_seconds = tcp_conn_sptr->timeout_seconds();
   if (timeout_seconds == 0) {
     timeout_seconds = server_ptr_->default_conn_idle_seconds_;
@@ -221,21 +237,34 @@ void TcpServer::ConnectionThread::UpdateActiveConnection(const TcpConnectionSptr
 
   auto new_hand = time_wheel_uptr_->UpdateConnection(old_hand, connfd, timeout_seconds);
   if (new_hand == TcpConnTimeWheel::kWheelSize) {
-    std::cout << "tcp_conn is not in time_wheel" << std::endl;
+    server_ptr_->logger_ptr_->Error("tcp_conn is not in time_wheel");
+    tcp_conn_sptr->Close();
     return;
   }
 
   if (new_hand != old_hand) {
-    conn_time_hand_map_[connfd] = new_hand;
+    it->second = new_hand;
   }
 }
 
+void TcpServer::ConnectionThread::DisconnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr) {
+  if (server_ptr_->disconnected_callback_ != nullptr) {
+    server_ptr_->disconnected_callback_(tcp_conn_sptr, happened_st_sptr);
+  }
+
+  DelConnection(tcp_conn_sptr->connfd());
+}
+
 void TcpServer::ConnectionThread::ConnectionReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr) {
+  UpdateActiveConnection(tcp_conn_sptr);
+
   if (server_ptr_->read_callback_ != nullptr) {
     server_ptr_->read_callback_(tcp_conn_sptr, happened_st_sptr);
   }
+}
 
-  UpdateActiveConnection(tcp_conn_sptr);
+void TcpServer::ConnectionThread::ConnectionDestructCallback(TcpConnection &tcp_conn) {
+  DelConnection(tcp_conn.connfd());
 }
 
 void TcpServer::ConnectionThread::ThreadFunc() {
@@ -244,8 +273,9 @@ void TcpServer::ConnectionThread::ThreadFunc() {
   loop_uptr_->Loop();
 }
 
-void TcpServer::ConnectionThread::AddConnectionInThread(int connfd, const InetAddress &remote_addr, const misc::SimpleTimeSptr &happened_st_sptr) {
-  auto tcp_conn_sptr = server_ptr_->new_conn_func_(connfd, remote_addr, loop_uptr_.get());
+void TcpServer::ConnectionThread::AddConnectionInThread(int connfd, const InetAddress &remote_addr, const misc::SimpleTimeSptr &happened_st_sptr, const std::string &trace_id) {
+  auto tcp_conn_sptr = std::make_shared<TcpConnection>(connfd, remote_addr, loop_uptr_.get());
+  tcp_conn_sptr->set_trace_id(trace_id);
 
   if (server_ptr_->connected_callback_ != nullptr) {
     tcp_conn_sptr->set_connected_callback(server_ptr_->connected_callback_);
@@ -257,11 +287,6 @@ void TcpServer::ConnectionThread::AddConnectionInThread(int connfd, const InetAd
                     std::placeholders::_1,
                     std::placeholders::_2));
 
-  tcp_conn_sptr->set_destruct_callback(
-          std::bind(&TcpServer::ConnectionThread::ConnectionDestructCallback,
-                    this,
-                    std::placeholders::_1));
-
   tcp_conn_sptr->set_read_callback(
           std::bind(&TcpServer::ConnectionThread::ConnectionReadCallback,
                     this,
@@ -271,26 +296,24 @@ void TcpServer::ConnectionThread::AddConnectionInThread(int connfd, const InetAd
   if (server_ptr_->write_complete_callback_ != nullptr) {
     tcp_conn_sptr->set_write_complete_callback(server_ptr_->write_complete_callback_);
   }
+
   if (server_ptr_->error_callback_ != nullptr) {
     tcp_conn_sptr->set_error_callback(server_ptr_->error_callback_);
   }
+
+  tcp_conn_sptr->set_destruct_callback(
+          std::bind(&TcpServer::ConnectionThread::ConnectionDestructCallback,
+                    this,
+                    std::placeholders::_1));
 
   auto timeout_seconds = tcp_conn_sptr->timeout_seconds();
   if (timeout_seconds == 0) {
     timeout_seconds = server_ptr_->default_conn_idle_seconds_;
   }
 
-  conn_time_hand_map_[connfd] = time_wheel_uptr_->AddConnection(tcp_conn_sptr, timeout_seconds);
+  conn_time_hand_map_.emplace(connfd, time_wheel_uptr_->AddConnection(tcp_conn_sptr, timeout_seconds));
 
-  tcp_conn_sptr->ConnectEstablished();
-}
-
-void TcpServer::ConnectionThread::DisconnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr) {
-  if (server_ptr_->disconnected_callback_ != nullptr) {
-    server_ptr_->disconnected_callback_(tcp_conn_sptr, happened_st_sptr);
-  }
-
-  DelConnection(tcp_conn_sptr->connfd());
+  tcp_conn_sptr->ConnectEstablished(happened_st_sptr);
 }
 
 

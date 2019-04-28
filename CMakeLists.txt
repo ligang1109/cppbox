@@ -17,11 +17,11 @@ set(VENDOR_DIR ${PROJECT_SOURCE_DIR}/vendor)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     include_directories(
-            /usr/local/googletest-release-1.8.1/include
+            /usr/local/googletest/include
     )
 
     link_libraries(
-            /usr/local/googletest-release-1.8.1/lib/libgtest.a
+            /usr/local/googletest/lib64/libgtest.a
     )
 endif ()
 
@@ -29,6 +29,8 @@ include_directories(
         ${SRC_DIR}
         ${VENDOR_DIR}
 )
+
+add_subdirectory(${VENDOR_DIR})
 
 set(MISC_SRC_DIR ${SRC_DIR}/misc)
 add_subdirectory(${MISC_SRC_DIR})

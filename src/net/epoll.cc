@@ -38,14 +38,14 @@ misc::ErrorUptr Epoll::Mod(int fd, uint32_t events) {
   return Ctl(fd, EPOLL_CTL_MOD, events);
 }
 
-misc::ErrorUptr Epoll::Del(int fd, uint32_t events) {
-  return Ctl(fd, EPOLL_CTL_DEL, events);
+misc::ErrorUptr Epoll::Del(int fd) {
+  return Ctl(fd, EPOLL_CTL_DEL, 0);
 }
 
 misc::ErrorUptr Epoll::Ctl(int fd, int op, uint32_t events) {
   struct epoll_event ev;
   memset(&ev, 0, sizeof ev);
-  ev.events = events;
+  ev.events  = events;
   ev.data.fd = fd;
 
   if (::epoll_ctl(epfd_, op, fd, &ev) == -1) {
@@ -69,7 +69,7 @@ misc::ErrorUptr Epoll::Wait(ReadyList *ready_list, int timeout_ms) {
   }
 
   for (auto i = 0; i < n; ++i) {
-    int fd = evlist_[i].data.fd;
+    int      fd     = evlist_[i].data.fd;
     uint32_t events = evlist_[i].events;
     ready_list->push_back({fd, events});
   }

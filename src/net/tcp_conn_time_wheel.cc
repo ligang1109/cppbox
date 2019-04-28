@@ -15,7 +15,10 @@ TcpConnTimeWheel::TcpConnTimeWheel(EventLoop *loop_ptr) :
         time_event_sptr_(new TimeEvent()) {}
 
 TcpConnTimeWheel::~TcpConnTimeWheel() {
-  loop_ptr_->DelEvent(time_event_sptr_->fd());
+  auto fd = time_event_sptr_->fd();
+  if (fd > 0) {
+    loop_ptr_->DelEvent(fd);
+  }
 }
 
 misc::ErrorUptr TcpConnTimeWheel::Init() {
@@ -33,7 +36,7 @@ misc::ErrorUptr TcpConnTimeWheel::Init() {
 uint16_t TcpConnTimeWheel::AddConnection(const TcpConnectionSptr &tcp_conn_sptr, uint16_t timeout_seconds) {
   auto hand = CalHand(timeout_seconds);
 
-  wheel_[hand][tcp_conn_sptr->connfd()] = tcp_conn_sptr;
+  wheel_[hand].emplace(tcp_conn_sptr->connfd(), tcp_conn_sptr);
 
   return hand;
 }
@@ -59,7 +62,7 @@ size_t TcpConnTimeWheel::UpdateConnection(uint16_t hand, int connfd, uint16_t ti
 
   auto nhand = CalHand(timeout_seconds);
   if (nhand != hand) {
-    wheel_[nhand][connfd] = it->second;
+    wheel_[nhand].emplace(connfd, it->second);
     wheel_[hand].erase(connfd);
   }
 

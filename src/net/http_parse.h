@@ -21,7 +21,14 @@ namespace net {
 struct HttpParseData {
   HttpParseData() :
           last_parsed_was_value(false),
-          parse_complete(false) {}
+          last_header_field(""),
+          last_header_value(""),
+          parse_complete(false),
+          method(""),
+          raw_url(""),
+          raw_body(""),
+          raw_path(""),
+          raw_query("") {}
 
   bool last_parsed_was_value;
   std::string last_header_field;
@@ -40,7 +47,11 @@ struct HttpParseData {
 
 using HttpParseDataUptr = std::unique_ptr<HttpParseData>;
 
+int ParseOnMessageBegin(http_parser *parser);
+
 int ParseOnUrl(http_parser *parser, const char *at, size_t len);
+
+int ParseOnStatus(http_parser *parser, const char *at, size_t len);
 
 int ParseOnHeaderField(http_parser *parser, const char *at, size_t len);
 
@@ -50,9 +61,11 @@ int ParseOnHeadersComplete(http_parser *parser);
 
 int ParseOnBody(http_parser *parser, const char *at, size_t len);
 
-int ParseOnMessageBegin(http_parser *parser);
-
 int ParseOnMessageComplete(http_parser *parser);
+
+int ParseOnChunkHeader(http_parser *parser);
+
+int ParseOnChunkComplete(http_parser *parser);
 
 
 class HttpParser : public misc::NonCopyable {

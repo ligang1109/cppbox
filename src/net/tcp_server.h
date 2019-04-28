@@ -10,6 +10,9 @@
 
 #include "tcp_connection.h"
 #include "tcp_conn_time_wheel.h"
+#include "trace_id_genter.h"
+
+#include "log/base.h"
 
 namespace cppbox {
 
@@ -20,11 +23,13 @@ int TcpConnectionThreadId();
 
 class TcpServer : public misc::NonCopyable {
  public:
-  using NewConnectionFunc = std::function<TcpConnectionSptr(int, const InetAddress &, EventLoop *)>;
-
   explicit TcpServer(uint16_t port, const std::string &ip = "127.0.0.1", uint16_t default_conn_idle_seconds = 300);
 
-  void set_new_conn_func(const NewConnectionFunc &func);
+  std::string ip();
+
+  uint16_t port();
+
+  void set_logger_ptr(log::LoggerInterface *logger_ptr);
 
   void set_connected_callback(const TcpConnCallback &cb);
 
@@ -53,7 +58,7 @@ class TcpServer : public misc::NonCopyable {
 
     void Start();
 
-    void AddConnection(int connfd, const InetAddress &remote_addr, const misc::SimpleTimeSptr &happened_st_sptr);
+    void AddConnection(int connfd, const InetAddress &remote_addr, const misc::SimpleTimeSptr &happened_st_sptr, const std::string &trace_id);
 
     size_t ConnectionCount();
 
@@ -62,25 +67,25 @@ class TcpServer : public misc::NonCopyable {
    private:
     void DelConnection(int connfd);
 
+    void DisconnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr);
+
+    void ConnectionReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr);
+
     void ConnectionDestructCallback(TcpConnection &tcp_conn);
 
     void UpdateActiveConnection(const TcpConnectionSptr &tcp_conn_sptr);
 
-    void ConnectionReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr);
-
     void ThreadFunc();
 
-    void AddConnectionInThread(int connfd, const InetAddress &remote_addr, const misc::SimpleTimeSptr &happened_st_sptr);
-
-    void DisconnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr);
+    void AddConnectionInThread(int connfd, const InetAddress &remote_addr, const misc::SimpleTimeSptr &happened_st_sptr, const std::string &trace_id);
 
     int id_;
 
-    TcpServer *server_ptr_;
+    TcpServer                    *server_ptr_;
     std::unique_ptr<std::thread> thread_uptr_;
-    EventLoopUptr loop_uptr_;
+    EventLoopUptr                loop_uptr_;
 
-    TcpConnTimeWheelUptr time_wheel_uptr_;
+    TcpConnTimeWheelUptr    time_wheel_uptr_;
     std::map<int, uint16_t> conn_time_hand_map_;
   };
 
@@ -88,19 +93,18 @@ class TcpServer : public misc::NonCopyable {
 
   void ListenCallback(const misc::SimpleTimeSptr &happened_st_sptr);
 
-  TcpConnectionSptr DefaultNewConnection(int connfd, const InetAddress &remote_addr, EventLoop *loop_ptr);
-
   std::string ip_;
-  uint16_t port_;
+  uint16_t    port_;
 
-  int listenfd_;
+  log::LoggerInterface *logger_ptr_;
+  TraceIdGenterUptr    trace_id_genter_uptr_;
+
+  int           listenfd_;
   EventLoopUptr loop_uptr_;
-  size_t dispatch_index_;
+  size_t        dispatch_index_;
 
-  uint16_t default_conn_idle_seconds_;
+  uint16_t                                       default_conn_idle_seconds_;
   std::vector<std::unique_ptr<ConnectionThread>> conn_thread_list_;
-
-  NewConnectionFunc new_conn_func_;
 
   TcpConnCallback connected_callback_;
   TcpConnCallback disconnected_callback_;
