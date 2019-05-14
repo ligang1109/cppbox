@@ -130,7 +130,16 @@ HttpParser::HttpParser(HttpParseData *pdata) {
 
 
 size_t HttpParser::Execute(char *buf, size_t len) {
-  return http_parser_execute(&parser_, &settings_, buf, len);
+  if (len == 0) {
+    return 0;
+  }
+
+  auto n = http_parser_execute(&parser_, &settings_, buf, len);
+  if (HTTP_PARSER_ERRNO(&parser_) != HPE_OK) {
+    return -1;
+  }
+
+  return n;
 }
 
 

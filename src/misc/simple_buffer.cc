@@ -5,13 +5,14 @@
 
 #include "simple_buffer.h"
 
+#include <string.h>
+
 namespace cppbox {
 
 namespace misc {
 
-SimpleBuffer::SimpleBuffer(size_t init_size, size_t max_size) :
+SimpleBuffer::SimpleBuffer(size_t init_size) :
         buf_(init_size),
-        max_size_(max_size),
         read_index_(0),
         write_index_(0) {}
 
@@ -56,23 +57,15 @@ void SimpleBuffer::Reset() {
 }
 
 bool SimpleBuffer::Resize(size_t size) {
-  if (max_size_ > 0) {
-    if (size > max_size_) {
-      return false;
-    }
-  }
-
   buf_.resize(size);
 
   return true;
 }
 
 size_t SimpleBuffer::Append(const char *data, size_t len) {
-  if (!EnsureWriteSize(len)) {
-    return 0;
-  }
+  EnsureWriteSize(len);
 
-  std::copy(data, data + len, buf_.begin() + write_index_);
+  ::memcpy(WriteBegin(), data, len);
   write_index_ += len;
 
   return len;
@@ -83,11 +76,11 @@ size_t SimpleBuffer::Append(const std::string &data) {
 }
 
 char *SimpleBuffer::ReadBegin() {
-  return buf_.begin().base() + read_index_;
+  return Begin() + read_index_;
 }
 
 char *SimpleBuffer::WriteBegin() {
-  return buf_.begin().base() + write_index_;
+  return Begin() + write_index_;
 }
 
 size_t SimpleBuffer::Read(char *data, size_t len) {
@@ -100,7 +93,7 @@ size_t SimpleBuffer::Read(char *data, size_t len) {
     len = readable;
   }
 
-  std::copy(buf_.begin() + read_index_, buf_.begin() + read_index_ + len, data);
+  ::memcpy(data, ReadBegin(), len);
   read_index_ += len;
 
   CheckReset();
@@ -141,18 +134,16 @@ void SimpleBuffer::CheckReset() {
   }
 }
 
-bool SimpleBuffer::EnsureWriteSize(size_t write_len) {
+void SimpleBuffer::EnsureWriteSize(size_t write_len) {
   if (write_len <= Writeable()) {
-    return true;
+    return;
   }
 
   if (write_len <= (read_index_ + Writeable())) {
-    auto bi = buf_.begin();
-    std::copy(bi + read_index_, bi + write_index_, bi);
+    ::memcpy(Begin(), ReadBegin(), Readable());
     write_index_ = Readable();
     read_index_  = 0;
-
-    return true;
+    return;
   }
 
   auto need = write_index_ + write_len;
@@ -161,18 +152,11 @@ bool SimpleBuffer::EnsureWriteSize(size_t write_len) {
     size *= 2;
   }
 
-  if (max_size_ > 0) {
-    if (size > max_size_) {
-      size = max_size_;
-    }
-    if (size < need) {
-      return false;
-    }
-  }
-
   buf_.resize(size);
+}
 
-  return true;
+char *SimpleBuffer::Begin() {
+  return &*buf_.begin();
 }
 
 

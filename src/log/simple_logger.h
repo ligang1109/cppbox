@@ -59,7 +59,7 @@ class SimpleLogger : public LoggerInterface, public misc::NonCopyable {
   void Log(LogLevel level, const std::string &msg) override;
 
  private:
-  WriterSptr writer_sptr_;
+  WriterSptr   writer_sptr_;
   FormaterSptr formater_sptr_;
 
   LogLevel g_level_;

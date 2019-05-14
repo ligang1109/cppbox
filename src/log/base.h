@@ -16,13 +16,13 @@ namespace log {
 
 enum class LogLevel {
   kEMERGENCY = 0,
-  kALERT = 1,
-  kCRITICAL = 2,
-  kERROR = 3,
-  kWARNING = 4,
-  kNOTICE = 5,
-  kINFO = 6,
-  kDEBUG = 7,
+  kALERT     = 1,
+  kCRITICAL  = 2,
+  kERROR     = 3,
+  kWARNING   = 4,
+  kNOTICE    = 5,
+  kINFO      = 6,
+  kDEBUG     = 7,
 };
 
 static const std::vector<std::string> kLogLevelMsgList({"emergency",

@@ -40,17 +40,15 @@ class FileWriter : public WriterInterface, public misc::NonCopyable {
   void EnsureFileExist();
 
   std::string path_;
-  int fd_;
+  int         fd_;
 
   misc::SimpleTimeUptr now_time_uptr_;
-  time_t last_write_seconds_;
+  time_t               last_write_seconds_;
 
   std::mutex mutex_;
 
   misc::SimpleBufferUptr buffer_uptr_;
 };
-
-static FileWriter debug_writer("/tmp/cppbox_debug_writer.log", 0);
 
 
 }

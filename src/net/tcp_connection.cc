@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <sys/uio.h>
 #include <sys/socket.h>
+#include <log/base.h>
+#include <iostream>
 
 namespace cppbox {
 
@@ -18,23 +20,26 @@ TcpConnection::TcpConnection(int connfd, const InetAddress &address, EventLoop *
         remote_ip_(address.ip),
         remote_port_(address.port),
         loop_ptr_(loop_ptr),
-        status_(ConnectionStatus::kNotset),
-        rw_event_sptr_(std::make_shared<Event>(connfd)),
+        status_(TcpConnectionStatus::kNotset),
         read_protected_size_(read_protected_size),
-        read_buf_uptr_(new misc::SimpleBuffer()),
-        write_buf_uptr_(new misc::SimpleBuffer()),
         data_sptr_(nullptr) {}
 
 TcpConnection::~TcpConnection() {
-  if (status_ != ConnectionStatus::kDisconnected) {
+  if (status_ != TcpConnectionStatus::kDisconnected) {
     loop_ptr_->DelEvent(connfd_);
     ::close(connfd_);
-    status_ = ConnectionStatus::kDisconnected;
+    status_ = TcpConnectionStatus::kDisconnected;
   }
 
   if (destruct_callback_ != nullptr) {
     destruct_callback_(*this);
   }
+}
+
+void TcpConnection::Init() {
+  rw_event_sptr_.reset(new Event(connfd_));
+  read_buf_uptr_.reset(new misc::SimpleBuffer(10));
+  write_buf_uptr_.reset(new misc::SimpleBuffer(10));
 }
 
 int TcpConnection::connfd() {
@@ -61,7 +66,7 @@ EventLoop *TcpConnection::loop_ptr() {
   return loop_ptr_;
 }
 
-ConnectionStatus TcpConnection::status() {
+TcpConnectionStatus TcpConnection::status() {
   return status_;
 }
 
@@ -114,7 +119,7 @@ TcpConnection::DataSptr TcpConnection::data_sptr() {
 }
 
 void TcpConnection::ConnectEstablished(const misc::SimpleTimeSptr &happened_st_sptr) {
-  status_              = ConnectionStatus::kConnected;
+  status_              = TcpConnectionStatus::kConnected;
   connected_time_sptr_ = (happened_st_sptr == nullptr) ? misc::NowTimeSptr() : happened_st_sptr;
 
   rw_event_sptr_->set_events(Event::kReadEvents | Event::kErrorEvents);
@@ -127,8 +132,12 @@ void TcpConnection::ConnectEstablished(const misc::SimpleTimeSptr &happened_st_s
   }
 }
 
-void TcpConnection::Close() {
-  status_ = ConnectionStatus::kPrepareDisconnect;
+void TcpConnection::Close(bool graceful) {
+  if (graceful) {
+    status_ = TcpConnectionStatus::kGracefulClose;
+  } else {
+    status_ = TcpConnectionStatus::kForceClose;
+  }
 }
 
 
@@ -147,6 +156,7 @@ ssize_t TcpConnection::Send(char *data, size_t len) {
   ssize_t n;
   while (true) {
     n = ::write(connfd_, data, len);
+    std::cout << "TcpConnection::Send write " << n << std::endl;
     if (n == -1) {
       if (errno == EINTR) {
         continue;
@@ -230,10 +240,11 @@ void TcpConnection::ReadFdCallback(const misc::SimpleTimeSptr &happened_st_sptr)
   auto writeable = read_buf_uptr_->Writeable();
 
   struct iovec iov[2];
-  iov[0].iov_base = read_buf_uptr_->ReadBegin();
+  iov[0].iov_base = read_buf_uptr_->WriteBegin();
   iov[0].iov_len  = writeable;
   iov[1].iov_base = extrabuf;
   iov[1].iov_len  = sizeof extrabuf;
+
 
   ssize_t n;
   while (true) {
@@ -321,7 +332,7 @@ void TcpConnection::WriteFdCallback(const misc::SimpleTimeSptr &happened_st_sptr
   }
 
 
-  if (status_ == ConnectionStatus::kDisconnecting) {
+  if (status_ == TcpConnectionStatus::kDisconnecting) {
     ForceClose();
     return;
   }
@@ -347,16 +358,20 @@ void TcpConnection::EnsureWriteEvents() {
 }
 
 bool TcpConnection::EnsureCloseAfterCallback() {
-  if (status_ == ConnectionStatus::kPrepareDisconnect) {
-    GracefulClose();
-    return true;
+  switch (status_) {
+    case TcpConnectionStatus::kGracefulClose:
+      GracefulClose();
+      return true;
+    case TcpConnectionStatus::kForceClose:
+      ForceClose();
+      return true;
+    default:
+      return false;
   }
-
-  return false;
 }
 
 void TcpConnection::GracefulClose(const misc::SimpleTimeSptr &happened_st_sptr) {
-  status_ = ConnectionStatus::kDisconnecting;
+  status_ = TcpConnectionStatus::kDisconnecting;
 
   rw_event_sptr_->DelEvents(Event::kReadEvents);
   loop_ptr_->UpdateEvent(rw_event_sptr_);
@@ -374,7 +389,7 @@ void TcpConnection::GracefulClose(const misc::SimpleTimeSptr &happened_st_sptr) 
 }
 
 void TcpConnection::ForceClose(const misc::SimpleTimeSptr &happened_st_sptr) {
-  status_ = ConnectionStatus::kDisconnected;
+  status_ = TcpConnectionStatus::kDisconnected;
 
   loop_ptr_->DelEvent(connfd_);
   ::close(connfd_);

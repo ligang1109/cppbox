@@ -71,18 +71,18 @@ TEST_F(SimpleBufferTest, Buffer) {
   std::cout << sbufp_->Size() << std::endl;
 }
 
-TEST_F(SimpleBufferTest, Max) {
-  cppbox::misc::SimpleBuffer sbuf(10, 100);
-  while (true) {
-    auto r = sbuf.Append("a", 1);
-    std::cout << sbuf.Size() << std::endl;
-    if (r == 0) {
-      break;
-    }
-  }
-
-  std::cout << sbuf.Readable() << std::endl;
-}
+//TEST_F(SimpleBufferTest, Max) {
+//  cppbox::misc::SimpleBuffer sbuf(10, 100);
+//  while (true) {
+//    auto r = sbuf.Append("a", 1);
+//    std::cout << sbuf.Size() << std::endl;
+//    if (r == 0) {
+//      break;
+//    }
+//  }
+//
+//  std::cout << sbuf.Readable() << std::endl;
+//}
 
 
 int main(int argc, char **argv) {

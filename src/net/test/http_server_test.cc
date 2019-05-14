@@ -11,6 +11,7 @@
 #include "log/simple_logger.h"
 #include "log/file_writer.h"
 #include "log/async_writer.h"
+#include "log/console_writer.h"
 
 
 cppbox::log::SimpleLogger *access_logger;
@@ -61,6 +62,8 @@ TEST_F(HttpServerTest, DemoServer) {
           DemoIndexFunc,
           std::placeholders::_1,
           std::placeholders::_2));
+
+  server.SetLogger(access_logger);
 
   err_uptr = server.Start();
   if (err_uptr != nullptr) {

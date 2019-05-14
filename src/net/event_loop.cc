@@ -68,7 +68,11 @@ EventSptr EventLoop::GetEvent(int fd) {
 
 void EventLoop::DelEvent(int fd) {
   epoll_uptr_->Del(fd);
-  event_map_.erase(fd);
+
+  auto it = event_map_.find(fd);
+  if (it != event_map_.end()) {
+    event_map_.erase(it);
+  }
 }
 
 misc::ErrorUptr EventLoop::Loop() {

@@ -94,14 +94,7 @@ misc::ErrorUptr TcpServer::Start() {
     logger_ptr_ = new log::NullLogger();
   }
 
-//  if (new_conn_func_ == nullptr) {
-//    new_conn_func_ = std::bind(
-//            &TcpServer::DefaultNewConnection,
-//            this,
-//            std::placeholders::_1,
-//            std::placeholders::_2,
-//            std::placeholders::_3);
-//  }
+  logger_ptr_->Debug("TcpServer::Start");
 
   for (auto &conn_thread_uptr : conn_thread_list_) {
     conn_thread_uptr->Start();
@@ -215,7 +208,7 @@ void TcpServer::ConnectionThread::DelConnection(int connfd) {
   auto it = conn_time_hand_map_.find(connfd);
   if (it != conn_time_hand_map_.end()) {
     time_wheel_uptr_->DelConnection(it->second, connfd);
-    conn_time_hand_map_.erase(connfd);
+    conn_time_hand_map_.erase(it);
   }
 }
 
@@ -275,6 +268,7 @@ void TcpServer::ConnectionThread::ThreadFunc() {
 
 void TcpServer::ConnectionThread::AddConnectionInThread(int connfd, const InetAddress &remote_addr, const misc::SimpleTimeSptr &happened_st_sptr, const std::string &trace_id) {
   auto tcp_conn_sptr = std::make_shared<TcpConnection>(connfd, remote_addr, loop_uptr_.get());
+  tcp_conn_sptr->Init();
   tcp_conn_sptr->set_trace_id(trace_id);
 
   if (server_ptr_->connected_callback_ != nullptr) {

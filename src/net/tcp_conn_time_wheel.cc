@@ -51,7 +51,10 @@ TcpConnectionSptr TcpConnTimeWheel::GetConnection(uint16_t hand, int connfd) {
 }
 
 void TcpConnTimeWheel::DelConnection(uint16_t hand, int connfd) {
-  wheel_[hand].erase(connfd);
+  auto it = wheel_[hand].find(connfd);
+  if (it != wheel_[hand].end()) {
+    wheel_[hand].erase(it);
+  }
 }
 
 size_t TcpConnTimeWheel::UpdateConnection(uint16_t hand, int connfd, uint16_t timeout_seconds) {
@@ -63,7 +66,7 @@ size_t TcpConnTimeWheel::UpdateConnection(uint16_t hand, int connfd, uint16_t ti
   auto nhand = CalHand(timeout_seconds);
   if (nhand != hand) {
     wheel_[nhand].emplace(connfd, it->second);
-    wheel_[hand].erase(connfd);
+    wheel_[hand].erase(it);
   }
 
   return nhand;
@@ -73,14 +76,18 @@ size_t TcpConnTimeWheel::UpdateConnection(uint16_t hand, int connfd, uint16_t ti
 void TcpConnTimeWheel::TimeRollFunc(const misc::SimpleTimeSptr &happened_st_sptr) {
   hand_ = (hand_ + 1) % kWheelSize;
 
-  if (!wheel_[hand_].empty()) {
-    wheel_[hand_].clear();
+  if (wheel_[hand_].empty()) {
+    return;
   }
+
+  std::map<int, TcpConnectionSptr> m;
+  wheel_[hand_].swap(m);
 }
 
 uint16_t TcpConnTimeWheel::CalHand(uint16_t timeout_seconds) {
   return (hand_ + timeout_seconds + 1) % kWheelSize;
 }
+
 
 }
 

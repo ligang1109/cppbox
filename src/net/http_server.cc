@@ -2,6 +2,7 @@
 // Created by ligang on 19-3-21.
 //
 
+#include <iostream>
 #include "http_server.h"
 
 namespace cppbox {
@@ -67,9 +68,15 @@ void HttpConnection::SendResponse(const TcpConnectionSptr &tcp_conn_sptr) {
   auto write_buf_ptr = tcp_conn_sptr->WriteBuffer();
 
   response_uptr_->AppendToBuffer(write_buf_ptr);
-  auto len = write_buf_ptr->Readable();
 
-  if (tcp_conn_sptr->SendWriteBuffer() == len) {
+  auto len = write_buf_ptr->Readable();
+  auto n   = tcp_conn_sptr->SendWriteBuffer();
+  if (n == -1) {
+    tcp_conn_sptr->Close(false);
+    return;
+  }
+
+  if (n == len) {
     RequestProcessComplete(tcp_conn_sptr);
   }
 }
@@ -142,7 +149,6 @@ void HttpServer::ReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc
     http_conn_sptr->SendError(tcp_conn_sptr, 400, "Bad Request");
     return;
   }
-
   if (http_conn_sptr->hstatus() == HttpConnectionStatus::KParseRequestComplete) {
     ProcessRequest(tcp_conn_sptr, http_conn_sptr);
   }

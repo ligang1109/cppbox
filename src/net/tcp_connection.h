@@ -19,13 +19,14 @@ namespace cppbox {
 
 namespace net {
 
-enum class ConnectionStatus {
-  kNotset            = 0,
-  kDisconnected      = 1,
-  kConnecting        = 2,
-  kConnected         = 3,
-  kPrepareDisconnect = 4,
-  kDisconnecting     = 5,
+enum class TcpConnectionStatus {
+  kNotset        = 0,
+  kDisconnected  = 1,
+  kConnecting    = 2,
+  kConnected     = 3,
+  kGracefulClose = 4,
+  kForceClose    = 5,
+  kDisconnecting = 6,
 };
 
 
@@ -42,6 +43,8 @@ class TcpConnection : public misc::NonCopyable,
 
   explicit TcpConnection(int connfd, const InetAddress &address, EventLoop *loop_ptr, size_t read_protected_size = 4096);
 
+  void Init();
+
   ~TcpConnection();
 
   int connfd();
@@ -56,7 +59,7 @@ class TcpConnection : public misc::NonCopyable,
 
   EventLoop *loop_ptr();
 
-  ConnectionStatus status();
+  TcpConnectionStatus status();
 
   misc::SimpleTimeSptr connected_time_sptr();
 
@@ -84,7 +87,7 @@ class TcpConnection : public misc::NonCopyable,
 
   void ConnectEstablished(const misc::SimpleTimeSptr &happened_st_sptr = nullptr);
 
-  void Close();
+  void Close(bool graceful = true);
 
   size_t Receive(char *data, size_t len);
 
@@ -117,7 +120,7 @@ class TcpConnection : public misc::NonCopyable,
   std::string trace_id_;
 
   EventLoop        *loop_ptr_;
-  ConnectionStatus status_;
+  TcpConnectionStatus status_;
   EventSptr        rw_event_sptr_;
   size_t           read_protected_size_;
 

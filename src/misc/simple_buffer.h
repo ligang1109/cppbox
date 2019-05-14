@@ -24,7 +24,7 @@ namespace misc {
 
 class SimpleBuffer : public NonCopyable {
  public:
-  explicit SimpleBuffer(size_t init_size = 1024, size_t max_size = 0);
+  explicit SimpleBuffer(size_t init_size = 1024);
 
   bool AddReadIndex(size_t len);
 
@@ -57,11 +57,12 @@ class SimpleBuffer : public NonCopyable {
  private:
   void CheckReset();
 
-  bool EnsureWriteSize(size_t write_len);
+  void EnsureWriteSize(size_t write_len);
+
+  char *Begin();
 
   std::vector<char> buf_;
 
-  size_t max_size_;
   size_t read_index_;
   size_t write_index_;
 };
