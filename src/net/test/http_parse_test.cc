@@ -48,15 +48,14 @@ TEST_F(HttpParseTest, Request) {
                      "\r\n"
                      "name%3Dabc%26value%3Daabbcc%26desc%3Ddemo";
 
-  cppbox::net::HttpParseData other_pdata;
-  delete parser_ptr_;
-  parser_ptr_ = new cppbox::net::HttpParser(&other_pdata);
+  pdata_.Reset();
+  parser_ptr_->Reset();
 
   len = strlen(raw_post2);
   n = parser_ptr_->Execute(raw_post2, len);
   EXPECT_TRUE(n == len);
 
-  request_.ConvertFromData(std::move(other_pdata));
+  request_.ConvertFromData(std::move(pdata_));
   request_.ParseFormBody();
 
   std::cout << request_.HeaderValue("Accept") << std::endl;

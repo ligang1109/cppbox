@@ -43,8 +43,6 @@ class TcpConnection : public misc::NonCopyable,
 
   explicit TcpConnection(int connfd, const InetAddress &address, EventLoop *loop_ptr, size_t read_protected_size = 4096);
 
-  void Init();
-
   ~TcpConnection();
 
   int connfd();
@@ -119,10 +117,10 @@ class TcpConnection : public misc::NonCopyable,
   uint16_t    remote_port_;
   std::string trace_id_;
 
-  EventLoop        *loop_ptr_;
+  EventLoop           *loop_ptr_;
   TcpConnectionStatus status_;
-  EventSptr        rw_event_sptr_;
-  size_t           read_protected_size_;
+  EventSptr           rw_event_sptr_;
+  size_t              read_protected_size_;
 
   misc::SimpleBufferUptr read_buf_uptr_;
   misc::SimpleBufferUptr write_buf_uptr_;

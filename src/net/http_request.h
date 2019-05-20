@@ -7,6 +7,8 @@
 
 #include "http_parse.h"
 
+#include "curl/curl.h"
+
 namespace cppbox {
 
 namespace net {
@@ -14,6 +16,10 @@ namespace net {
 
 class HttpRequest : public misc::NonCopyable {
  public:
+  HttpRequest();
+
+  ~HttpRequest();
+
   std::string method();
 
   std::string raw_url();
@@ -30,8 +36,12 @@ class HttpRequest : public misc::NonCopyable {
 
   void ParseFormBody();
 
+  void Reset();
+
  private:
-  void parseQueryValues(const char *query_ptr, int len);
+  void ParseQueryValues(const char *query_ptr, int len);
+
+  CURL *curl();
 
   std::string method_;
   std::string raw_url_;
@@ -40,6 +50,8 @@ class HttpRequest : public misc::NonCopyable {
 
   std::map<std::string, std::string> header_map_;
   std::map<std::string, std::string> query_values_;
+
+  CURL *curl_;
 };
 
 using HttpRequestUptr = std::unique_ptr<HttpRequest>;

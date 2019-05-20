@@ -12,10 +12,10 @@ namespace net {
 
 HttpConnection::HttpConnection() :
         hstatus_(HttpConnectionStatus::kWaitRequest),
-        pdata_uptr_(nullptr),
-        parser_uptr_(nullptr),
-        request_uptr_(nullptr),
-        response_uptr_(nullptr) {}
+        pdata_uptr_(new HttpParseData()),
+        parser_uptr_(new HttpParser(pdata_uptr_.get())),
+        request_uptr_(new HttpRequest()),
+        response_uptr_(new HttpResponse()) {}
 
 HttpConnectionStatus HttpConnection::hstatus() {
   return hstatus_;
@@ -34,13 +34,6 @@ HttpResponse *HttpConnection::Response() {
 }
 
 bool HttpConnection::ParseRequest(misc::SimpleBuffer *rbuf_ptr) {
-  if (hstatus_ == HttpConnectionStatus::kWaitRequest) {
-    hstatus_ = HttpConnectionStatus::kParseRequest;
-    pdata_uptr_.reset(new HttpParseData());
-    parser_uptr_.reset(new HttpParser(pdata_uptr_.get()));
-    response_uptr_.reset(new HttpResponse());
-  }
-
   auto len = rbuf_ptr->Readable();
   auto n   = parser_uptr_->Execute(rbuf_ptr->ReadBegin(), len);
   if (n != len) {
@@ -50,7 +43,6 @@ bool HttpConnection::ParseRequest(misc::SimpleBuffer *rbuf_ptr) {
   rbuf_ptr->AddReadIndex(n);
   if (pdata_uptr_->parse_complete) {
     hstatus_ = HttpConnectionStatus::KParseRequestComplete;
-    request_uptr_.reset(new HttpRequest());
     request_uptr_->ConvertFromData(std::move(*pdata_uptr_));
   }
 
@@ -88,6 +80,11 @@ void HttpConnection::RequestProcessComplete(const TcpConnectionSptr &tcp_conn_sp
   }
 
   hstatus_ = HttpConnectionStatus::kWaitRequest;
+
+  pdata_uptr_->Reset();
+  parser_uptr_->Reset();
+  request_uptr_->Reset();
+  response_uptr_->Reset();
 }
 
 
@@ -138,6 +135,7 @@ void HttpServer::ReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc
   bool parse_ok;
   switch (http_conn_sptr->hstatus()) {
     case HttpConnectionStatus::kWaitRequest:
+      http_conn_sptr->set_hstatus(HttpConnectionStatus::kParseRequest);
     case HttpConnectionStatus::kParseRequest:
       parse_ok = http_conn_sptr->ParseRequest(tcp_conn_sptr->ReadBuffer());
       break;

@@ -24,7 +24,7 @@ namespace misc {
 
 class SimpleBuffer : public NonCopyable {
  public:
-  explicit SimpleBuffer(size_t init_size = 1024);
+  explicit SimpleBuffer(size_t init_size = 4096);
 
   bool AddReadIndex(size_t len);
 

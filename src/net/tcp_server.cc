@@ -268,7 +268,6 @@ void TcpServer::ConnectionThread::ThreadFunc() {
 
 void TcpServer::ConnectionThread::AddConnectionInThread(int connfd, const InetAddress &remote_addr, const misc::SimpleTimeSptr &happened_st_sptr, const std::string &trace_id) {
   auto tcp_conn_sptr = std::make_shared<TcpConnection>(connfd, remote_addr, loop_uptr_.get());
-  tcp_conn_sptr->Init();
   tcp_conn_sptr->set_trace_id(trace_id);
 
   if (server_ptr_->connected_callback_ != nullptr) {

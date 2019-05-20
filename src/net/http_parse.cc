@@ -10,6 +10,23 @@ namespace cppbox {
 
 namespace net {
 
+void HttpParseData::Reset() {
+  last_parsed_was_value = false;
+  last_header_field.clear();
+  last_header_value.clear();
+
+  parse_complete = false;
+
+  method.clear();
+  raw_url.clear();
+  raw_body.clear();
+  raw_path.clear();
+  raw_query.clear();
+
+  header_map.clear();
+}
+
+
 int ParseOnMessageBegin(http_parser *parser) {
   return 0;
 }
@@ -140,6 +157,10 @@ size_t HttpParser::Execute(char *buf, size_t len) {
   }
 
   return n;
+}
+
+void HttpParser::Reset() {
+  http_parser_init(&parser_, HTTP_REQUEST);
 }
 
 

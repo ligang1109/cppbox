@@ -28,6 +28,8 @@ class HttpResponse : public misc::NonCopyable {
   void AddHeader(const std::string &field, const std::string &value);
 
   size_t AppendToBuffer(misc::SimpleBuffer *sbuf_ptr);
+  
+  void Reset();
 
  private:
   int status_code_;

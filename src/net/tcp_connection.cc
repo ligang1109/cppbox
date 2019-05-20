@@ -21,6 +21,9 @@ TcpConnection::TcpConnection(int connfd, const InetAddress &address, EventLoop *
         remote_port_(address.port),
         loop_ptr_(loop_ptr),
         status_(TcpConnectionStatus::kNotset),
+        rw_event_sptr_(new Event(connfd_)),
+        read_buf_uptr_(new misc::SimpleBuffer()),
+        write_buf_uptr_(new misc::SimpleBuffer()),
         read_protected_size_(read_protected_size),
         data_sptr_(nullptr) {}
 
@@ -34,12 +37,6 @@ TcpConnection::~TcpConnection() {
   if (destruct_callback_ != nullptr) {
     destruct_callback_(*this);
   }
-}
-
-void TcpConnection::Init() {
-  rw_event_sptr_.reset(new Event(connfd_));
-  read_buf_uptr_.reset(new misc::SimpleBuffer(10));
-  write_buf_uptr_.reset(new misc::SimpleBuffer(10));
 }
 
 int TcpConnection::connfd() {

@@ -21,7 +21,7 @@ void HttpResponse::set_body(const std::string &body) {
 
 void HttpResponse::SetStatus(int code, const std::string &msg) {
   status_code_ = code;
-  status_msg_ = msg;
+  status_msg_  = msg;
 }
 
 void HttpResponse::AddHeader(const std::string &field, const std::string &value) {
@@ -45,6 +45,17 @@ size_t HttpResponse::AppendToBuffer(misc::SimpleBuffer *sbuf_ptr) {
 
   return n;
 }
+
+void HttpResponse::Reset() {
+  if (status_code_ != 200) {
+    status_code_ = 200;
+    status_msg_  = "OK";
+  }
+
+  body_.clear();
+  header_map_.clear();
+}
+
 
 }
 
