@@ -4,7 +4,6 @@
 
 #include "http_parse.h"
 
-#include "curl/curl.h"
 
 namespace cppbox {
 

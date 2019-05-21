@@ -4,19 +4,12 @@
 
 #include "http_request.h"
 
+#include "misc/misc.h"
+
 
 namespace cppbox {
 
 namespace net {
-
-HttpRequest::HttpRequest() :
-        curl_(nullptr) {}
-
-HttpRequest::~HttpRequest() {
-  if (curl_ != nullptr) {
-    curl_easy_cleanup(curl_);
-  }
-}
 
 
 std::string HttpRequest::method() {
@@ -83,13 +76,14 @@ void HttpRequest::Reset() {
 }
 
 void HttpRequest::ParseQueryValues(const char *raw_query_ptr, int len) {
-  int  outlength;
-  auto query_ptr = curl_easy_unescape(curl(), raw_query_ptr, len, &outlength);
+  auto query     = misc::UrlDecode(raw_query_ptr, len);
+  auto query_ptr = query.c_str();
+  auto query_len = query.size();
 
   bool parse_value = false;
   int  ks          = 0, kl = 0, vs = 0, vl = 0;
 
-  for (int i = 0; i < outlength; ++i) {
+  for (int i = 0; i < query_len; ++i) {
     if (query_ptr[i] != '=') {
       if (parse_value) {
         if (query_ptr[i] == '&') {
@@ -105,19 +99,10 @@ void HttpRequest::ParseQueryValues(const char *raw_query_ptr, int len) {
       vs          = i + 1;
     }
   }
+
   if (kl) {
-    query_values_.emplace(std::string(query_ptr + ks, kl), std::string(query_ptr + vs, outlength - vs));
+    query_values_.emplace(std::string(query_ptr + ks, kl), std::string(query_ptr + vs, query_len - vs));
   }
-
-  curl_free(query_ptr);
-}
-
-CURL *HttpRequest::curl() {
-  if (curl_ == nullptr) {
-    curl_ = curl_easy_init();
-  }
-
-  return curl_;
 }
 
 

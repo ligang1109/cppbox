@@ -8,7 +8,6 @@
 #include <sys/uio.h>
 #include <sys/socket.h>
 #include <log/base.h>
-#include <iostream>
 
 namespace cppbox {
 
@@ -153,7 +152,6 @@ ssize_t TcpConnection::Send(char *data, size_t len) {
   ssize_t n;
   while (true) {
     n = ::write(connfd_, data, len);
-    std::cout << "TcpConnection::Send write " << n << std::endl;
     if (n == -1) {
       if (errno == EINTR) {
         continue;

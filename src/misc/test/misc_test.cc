@@ -45,6 +45,17 @@ TEST_F(MiscTest, MakeUnique) {
   std::cout << uptr->name_ << std::endl;
 }
 
+TEST_F(MiscTest, UrlEncodeDecode) {
+  std::string query  = "a=1&b=2&c=3";
+  std::string equery = cppbox::misc::UrlEncode(query.c_str(), query.size());
+
+  std::cout << equery << std::endl;
+  std::cout << cppbox::misc::UrlDecode(equery.c_str(), equery.size()) << std::endl;
+
+  equery = "ab%3D1%26bcd%3D2%26cdef%3D3%26defgh%3Dasdfasdfsa";
+  std::cout << cppbox::misc::UrlDecode(equery.c_str(), equery.size()) << std::endl;
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
 

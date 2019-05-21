@@ -25,6 +25,14 @@ std::unique_ptr<T> MakeUnique(Ts &&...params) {
 
 ErrorUptr SetFdNonBlock(int fd);
 
+char IntToHex(char code);
+
+char HexToInt(char ch);
+
+std::string UrlEncode(const char *str, int len);
+
+std::string UrlDecode(const char *str, int len);
+
 }
 
 }
