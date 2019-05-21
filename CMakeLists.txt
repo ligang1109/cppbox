@@ -15,13 +15,18 @@ set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
 set(BUILD_SRC_DIR ${PROJECT_BINARY_DIR}/src)
 set(VENDOR_DIR ${PROJECT_SOURCE_DIR}/vendor)
 
+
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    if (NOT GTEST_DIR)
+        set(GTEST_DIR /usr/local/googletest)
+    endif ()
+
     include_directories(
-            /usr/local/googletest/include
+            ${GTEST_DIR}/include
     )
 
     link_libraries(
-            /usr/local/googletest/lib64/libgtest.a
+            ${GTEST_DIR}/lib64/libgtest.a
     )
 endif ()
 

@@ -1,5 +1,3 @@
-include(${VENDOR_DIR}/curl/curl.cmake)
-
 set(NET_HEADER_LIST
         ${NET_SRC_DIR}/epoll.h
         ${NET_SRC_DIR}/event.h
