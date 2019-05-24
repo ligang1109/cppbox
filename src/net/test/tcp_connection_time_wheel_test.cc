@@ -4,30 +4,30 @@
 
 #include "gtest/gtest.h"
 
-#include "net/tcp_conn_time_wheel.h"
+#include "net/tcp_connection_time_wheel.h"
 
 
-class TcpConnTimeWheelTest : public ::testing::Test {
+class TcpConnectionTimeWheelTest : public ::testing::Test {
  protected:
-  TcpConnTimeWheelTest() :
+  TcpConnectionTimeWheelTest() :
           loop_uptr_(new cppbox::net::EventLoop()),
-          wheel_uptr_(new cppbox::net::TcpConnTimeWheel(loop_uptr_.get())) {
+          wheel_uptr_(new cppbox::net::TcpConnectionTimeWheel(loop_uptr_.get())) {
     loop_uptr_->Init();
     wheel_uptr_->Init();
   }
 
-  ~TcpConnTimeWheelTest() override {
+  ~TcpConnectionTimeWheelTest() override {
   }
 
   cppbox::net::EventLoopUptr loop_uptr_;
-  cppbox::net::TcpConnTimeWheelUptr wheel_uptr_;
+  cppbox::net::TcpConnectionTimeWheelUptr wheel_uptr_;
 };
 
 void TcpConnDestructCallback(cppbox::net::TcpConnection &tcp_conn) {
   std::cout << "destruct tcp_conn " << tcp_conn.connfd() << std::endl;
 }
 
-TEST_F(TcpConnTimeWheelTest, Roll) {
+TEST_F(TcpConnectionTimeWheelTest, Roll) {
   for (auto i = 0; i < 10; ++i) {
     cppbox::net::InetAddress address;
     auto tcp_conn_sptr = std::make_shared<cppbox::net::TcpConnection>(i + 10, address, loop_uptr_.get());

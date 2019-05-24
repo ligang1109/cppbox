@@ -17,7 +17,8 @@ namespace net {
 EventLoop::EventLoop(int timeout_ms) :
         quit_(false),
         handling_events_(false),
-        timeout_ms_(timeout_ms) {}
+        timeout_ms_(timeout_ms),
+        happened_st_sptr_(new misc::SimpleTime()) {}
 
 EventLoop::~EventLoop() {
   ::close(wakeup_fd_);
@@ -86,13 +87,13 @@ misc::ErrorUptr EventLoop::Loop() {
       return eu;
     }
 
-    auto happened_st_sptr = misc::NowTimeSptr();
+    happened_st_sptr_->Update();
 
     handling_events_ = true;
     for (auto &ready :ready_list) {
       auto it = event_map_.find(ready.first);
       if (it != event_map_.end()) {
-        HandleEvent(it->second, ready.second, happened_st_sptr);
+        HandleEvent(it->second, ready.second);
       }
     }
     handling_events_ = false;
@@ -129,11 +130,11 @@ void EventLoop::WakeupCallback(const misc::SimpleTimeSptr &happened_st_sptr) {
   ::read(wakeup_fd_, &u, sizeof(uint64_t));
 }
 
-void EventLoop::HandleEvent(const EventSptr &event_sptr, uint32_t ready_events, const misc::SimpleTimeSptr &happened_st_sptr) {
+void EventLoop::HandleEvent(const EventSptr &event_sptr, uint32_t ready_events) {
   if (ready_events & Event::kErrorEvents) {
     auto ecb = event_sptr->error_callback();
     if (ecb) {
-      ecb(happened_st_sptr);
+      ecb(happened_st_sptr_);
       return;
     }
   }
@@ -141,14 +142,14 @@ void EventLoop::HandleEvent(const EventSptr &event_sptr, uint32_t ready_events, 
   if (ready_events & Event::kReadEvents) {
     auto rcb = event_sptr->read_callback();
     if (rcb) {
-      rcb(happened_st_sptr);
+      rcb(happened_st_sptr_);
     }
   }
 
   if (ready_events & Event::kWriteEvents) {
     auto wcb = event_sptr->write_callback();
     if (wcb) {
-      wcb(happened_st_sptr);
+      wcb(happened_st_sptr_);
     }
   }
 }

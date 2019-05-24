@@ -33,7 +33,7 @@ enum class TcpConnectionStatus {
 class TcpConnection;
 
 using TcpConnectionSptr = std::shared_ptr<TcpConnection>;
-using TcpConnCallback = std::function<void(const TcpConnectionSptr &, const misc::SimpleTimeSptr &)>;
+using TcpConnectionCallback = std::function<void(const TcpConnectionSptr &, const misc::SimpleTimeSptr &)>;
 
 class TcpConnection : public misc::NonCopyable,
                       public std::enable_shared_from_this<TcpConnection> {
@@ -67,17 +67,15 @@ class TcpConnection : public misc::NonCopyable,
 
   uint16_t timeout_seconds();
 
-  void set_connected_callback(const TcpConnCallback &cb);
+  void set_connected_callback(const TcpConnectionCallback &cb);
 
-  void set_disconnected_callback(const TcpConnCallback &cb);
+  void set_disconnected_callback(const TcpConnectionCallback &cb);
 
-  void set_read_callback(const TcpConnCallback &cb);
+  void set_read_callback(const TcpConnectionCallback &cb);
 
-  void set_write_complete_callback(const TcpConnCallback &cb);
+  void set_write_complete_callback(const TcpConnectionCallback &cb);
 
-  void set_error_callback(const TcpConnCallback &cb);
-
-  void set_destruct_callback(const DestructCallback &cb);
+  void set_error_callback(const TcpConnectionCallback &cb);
 
   void set_data_sptr(const DataSptr &data_sptr);
 
@@ -96,6 +94,10 @@ class TcpConnection : public misc::NonCopyable,
   misc::SimpleBuffer *ReadBuffer();
 
   misc::SimpleBuffer *WriteBuffer();
+
+  void Reset();
+
+  void Reuse(int connfd, const InetAddress &address, EventLoop *loop_ptr);
 
  protected:
   void ReadFdCallback(const misc::SimpleTimeSptr &happened_st_sptr);
@@ -129,13 +131,11 @@ class TcpConnection : public misc::NonCopyable,
   misc::SimpleTimeSptr last_receive_time_sptr_;
   uint16_t             timeout_seconds_;
 
-  TcpConnCallback connected_callback_;
-  TcpConnCallback disconnected_callback_;
-  TcpConnCallback read_callback_;
-  TcpConnCallback write_complete_callback_;
-  TcpConnCallback error_callback_;
-
-  DestructCallback destruct_callback_;
+  TcpConnectionCallback connected_callback_;
+  TcpConnectionCallback disconnected_callback_;
+  TcpConnectionCallback read_callback_;
+  TcpConnectionCallback write_complete_callback_;
+  TcpConnectionCallback error_callback_;
 
   DataSptr data_sptr_;
 };

@@ -24,6 +24,10 @@ int Event::fd() {
   return fd_;
 }
 
+void Event::set_fd(int fd) {
+  fd_ = fd;
+}
+
 uint32_t Event::events() {
   return events_;
 }
@@ -68,6 +72,15 @@ bool Event::HasEvents(uint32_t events) {
   return (events_ & events) == events;
 }
 
+void Event::Reset() {
+  fd_     = 0;
+  events_ = 0;
+
+  read_callback_  = nullptr;
+  write_callback_ = nullptr;
+  error_callback_ = nullptr;
+}
+
 
 TimeEvent::~TimeEvent() {
   ::close(fd_);
@@ -79,7 +92,7 @@ misc::ErrorUptr TimeEvent::Init() {
     return misc::NewErrorUptrByErrno();
   }
 
-  events_ = kReadEvents;
+  events_        = kReadEvents;
   read_callback_ = std::bind(&TimeEvent::TimeUpCallback, this, std::placeholders::_1);
 
   return nullptr;
@@ -113,7 +126,7 @@ void TimeEvent::RunEvery(time_t interval_sec, const EventCallback &cb) {
   memset(&new_value, 0, sizeof(struct itimerspec));
 
   new_value.it_interval.tv_sec = interval_sec;
-  new_value.it_value.tv_sec = interval_sec;
+  new_value.it_value.tv_sec    = interval_sec;
 
   ::timerfd_settime(fd_, 0, &new_value, nullptr);
 

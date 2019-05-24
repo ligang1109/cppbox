@@ -12,14 +12,14 @@ namespace cppbox {
 namespace net {
 
 
-class TcpConnTimeWheel {
+class TcpConnectionTimeWheel {
  public:
   static const uint16_t kMaxConnIdleSeconds = 65535;
-  static const size_t kWheelSize = 65536;
+  static const size_t   kWheelSize          = 65536;
 
-  explicit TcpConnTimeWheel(EventLoop *loop_ptr);
+  explicit TcpConnectionTimeWheel(EventLoop *loop_ptr);
 
-  ~TcpConnTimeWheel();
+  ~TcpConnectionTimeWheel();
 
   misc::ErrorUptr Init();
 
@@ -36,14 +36,14 @@ class TcpConnTimeWheel {
 
   uint16_t CalHand(uint16_t timeout_seconds);
 
-  uint16_t hand_;
+  uint16_t                                      hand_;
   std::vector<std::map<int, TcpConnectionSptr>> wheel_;
 
-  EventLoop *loop_ptr_;
+  EventLoop     *loop_ptr_;
   TimeEventSptr time_event_sptr_;
 };
 
-using TcpConnTimeWheelUptr = std::unique_ptr<TcpConnTimeWheel>;
+using TcpConnectionTimeWheelUptr = std::unique_ptr<TcpConnectionTimeWheel>;
 
 
 }

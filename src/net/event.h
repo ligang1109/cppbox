@@ -34,6 +34,8 @@ class Event : public misc::NonCopyable {
 
   int fd();
 
+  void set_fd(int fd);
+
   uint32_t events();
 
   void set_events(uint32_t events);
@@ -55,6 +57,8 @@ class Event : public misc::NonCopyable {
   void DelEvents(uint32_t events);
 
   bool HasEvents(uint32_t events);
+
+  void Reset();
 
  protected:
   int fd_;

@@ -9,7 +9,8 @@
 #include <thread>
 
 #include "tcp_connection.h"
-#include "tcp_conn_time_wheel.h"
+#include "tcp_connection_time_wheel.h"
+#include "tcp_connection_pool.h"
 #include "trace_id_genter.h"
 
 #include "log/base.h"
@@ -31,17 +32,17 @@ class TcpServer : public misc::NonCopyable {
 
   void set_logger_ptr(log::LoggerInterface *logger_ptr);
 
-  void set_connected_callback(const TcpConnCallback &cb);
+  void set_connected_callback(const TcpConnectionCallback &cb);
 
-  void set_disconnected_callback(const TcpConnCallback &cb);
+  void set_disconnected_callback(const TcpConnectionCallback &cb);
 
-  void set_read_callback(const TcpConnCallback &cb);
+  void set_read_callback(const TcpConnectionCallback &cb);
 
-  void set_write_complete_callback(const TcpConnCallback &cb);
+  void set_write_complete_callback(const TcpConnectionCallback &cb);
 
-  void set_error_callback(const TcpConnCallback &cb);
+  void set_error_callback(const TcpConnectionCallback &cb);
 
-  misc::ErrorUptr Init(int conn_thread_cnt, int conn_thread_loop_timeout_ms, int init_evlist_size = 1024);
+  misc::ErrorUptr Init(int thread_cnt, int loop_timeout_ms, int init_evlist_size = 1024, size_t tcp_conn_pool_shard_size = 10000, size_t tcp_conn_pool_max_shard_cnt = 10);
 
   misc::ErrorUptr Start();
 
@@ -52,7 +53,7 @@ class TcpServer : public misc::NonCopyable {
  private:
   class ConnectionThread {
    public:
-    explicit ConnectionThread(int id, TcpServer *server_ptr);
+    explicit ConnectionThread(int id, TcpServer *server_ptr, size_t tcp_conn_pool_shard_size, size_t tcp_conn_pool_max_shard_cnt);
 
     misc::ErrorUptr Init(int loop_timeout_ms, int init_evlist_size = 1024);
 
@@ -65,13 +66,9 @@ class TcpServer : public misc::NonCopyable {
     void RunFunction(const EventLoop::Functor &func);
 
    private:
-    void DelConnection(int connfd);
-
     void DisconnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr);
 
     void ConnectionReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr);
-
-    void ConnectionDestructCallback(TcpConnection &tcp_conn);
 
     void UpdateActiveConnection(const TcpConnectionSptr &tcp_conn_sptr);
 
@@ -85,8 +82,10 @@ class TcpServer : public misc::NonCopyable {
     std::unique_ptr<std::thread> thread_uptr_;
     EventLoopUptr                loop_uptr_;
 
-    TcpConnTimeWheelUptr    time_wheel_uptr_;
-    std::map<int, uint16_t> conn_time_hand_map_;
+    TcpConnectionTimeWheelUptr time_wheel_uptr_;
+    std::map<int, uint16_t>    conn_time_hand_map_;
+
+    TcpConnectionPoolUptr pool_uptr_;
   };
 
   misc::ErrorUptr ListenAndServe();
@@ -106,11 +105,11 @@ class TcpServer : public misc::NonCopyable {
   uint16_t                                       default_conn_idle_seconds_;
   std::vector<std::unique_ptr<ConnectionThread>> conn_thread_list_;
 
-  TcpConnCallback connected_callback_;
-  TcpConnCallback disconnected_callback_;
-  TcpConnCallback read_callback_;
-  TcpConnCallback write_complete_callback_;
-  TcpConnCallback error_callback_;
+  TcpConnectionCallback connected_callback_;
+  TcpConnectionCallback disconnected_callback_;
+  TcpConnectionCallback read_callback_;
+  TcpConnectionCallback write_complete_callback_;
+  TcpConnectionCallback error_callback_;
 };
 
 using TcpServerUptr = std::unique_ptr<TcpServer>;

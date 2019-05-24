@@ -78,6 +78,10 @@ void HttpConnection::RequestProcessComplete(const TcpConnectionSptr &tcp_conn_sp
     return;
   }
 
+  Reset();
+}
+
+void HttpConnection::Reset() {
   hstatus_ = HttpConnectionStatus::kWaitRequest;
 
   pdata_uptr_->Reset();
@@ -125,7 +129,13 @@ void HttpServer::SetLogger(log::LoggerInterface *logger_ptr) {
 }
 
 void HttpServer::ConnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr) {
-  tcp_conn_sptr->set_data_sptr(std::make_shared<HttpConnection>());
+  auto data_sptr = tcp_conn_sptr->data_sptr();
+  if (data_sptr == nullptr) {
+    tcp_conn_sptr->set_data_sptr(std::make_shared<HttpConnection>());
+  } else {
+    auto http_conn_sptr = std::static_pointer_cast<HttpConnection>(data_sptr);
+    http_conn_sptr->Reset();
+  }
 }
 
 void HttpServer::ReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr) {

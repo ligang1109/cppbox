@@ -10,6 +10,7 @@
 #include <mutex>
 
 #include "event.h"
+#include "misc/simple_time.h"
 
 namespace cppbox {
 
@@ -43,21 +44,24 @@ class EventLoop : public misc::NonCopyable {
 
   void WakeupCallback(const misc::SimpleTimeSptr &happened_st_sptr);
 
-  void HandleEvent(const EventSptr &event_sptr, uint32_t ready_events, const misc::SimpleTimeSptr &happened_st_sptr);
+  void HandleEvent(const EventSptr &event_sptr, uint32_t ready_events);
 
   void RunFunctions();
 
-  int wakeup_fd_;
+  int       wakeup_fd_;
   EpollUptr epoll_uptr_;
 
-  std::atomic<bool> quit_;
+  std::atomic<bool>        quit_;
   std::map<int, EventSptr> event_map_;
 
-  std::mutex mutex_;
+  std::mutex           mutex_;
   std::vector<Functor> function_list_;
   bool handling_events_;
 
   int timeout_ms_;
+
+  misc::SimpleTimeSptr happened_st_sptr_;
+
 };
 
 using EventLoopUptr = std::unique_ptr<EventLoop>;

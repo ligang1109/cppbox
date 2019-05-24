@@ -17,7 +17,7 @@ static const char *kGeneralTimeLayout1 = "%Y-%m-%d %H:%M:%S";
 
 class SimpleTime {
  public:
-  explicit SimpleTime(time_t tv_sec, suseconds_t tv_usec = 0);
+  explicit SimpleTime(time_t tv_sec = 0, suseconds_t tv_usec = 0);
 
   ErrorUptr ParseTime(const char *time_str, const char *layout = kGeneralTimeLayout1);
 

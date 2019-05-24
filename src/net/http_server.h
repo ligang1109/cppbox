@@ -48,6 +48,8 @@ class HttpConnection : misc::NonCopyable {
 
   void RequestProcessComplete(const TcpConnectionSptr &tcp_conn_sptr);
 
+  void Reset();
+
  private:
   HttpConnectionStatus hstatus_;
 
