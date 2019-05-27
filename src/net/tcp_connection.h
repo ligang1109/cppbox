@@ -67,6 +67,8 @@ class TcpConnection : public misc::NonCopyable,
 
   uint16_t timeout_seconds();
 
+  bool is_timeout();
+
   void set_connected_callback(const TcpConnectionCallback &cb);
 
   void set_disconnected_callback(const TcpConnectionCallback &cb);
@@ -83,7 +85,7 @@ class TcpConnection : public misc::NonCopyable,
 
   void ConnectEstablished(const misc::SimpleTimeSptr &happened_st_sptr = nullptr);
 
-  void Close(bool graceful = true);
+  void Close(bool graceful = true, bool is_timeout = false);
 
   size_t Receive(char *data, size_t len);
 
@@ -130,6 +132,7 @@ class TcpConnection : public misc::NonCopyable,
   misc::SimpleTimeSptr connected_time_sptr_;
   misc::SimpleTimeSptr last_receive_time_sptr_;
   uint16_t             timeout_seconds_;
+  bool is_timeout_;
 
   TcpConnectionCallback connected_callback_;
   TcpConnectionCallback disconnected_callback_;

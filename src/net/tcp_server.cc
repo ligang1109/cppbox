@@ -240,7 +240,9 @@ void TcpServer::ConnectionThread::DisconnectedCallback(const TcpConnectionSptr &
 
   auto it = conn_time_hand_map_.find(connfd);
   if (it != conn_time_hand_map_.end()) {
-    time_wheel_uptr_->DelConnection(it->second, connfd);
+    if (!tcp_conn_sptr->is_timeout()) {
+      time_wheel_uptr_->DelConnection(it->second, connfd);
+    }
     conn_time_hand_map_.erase(it);
   }
 

@@ -85,7 +85,7 @@ void TcpConnectionTimeWheel::TimeRollFunc(const misc::SimpleTimeSptr &happened_s
   wheel_[hand_].swap(tm);
 
   for (auto &it : tm) {
-    it.second->Close(false);
+    it.second->Close(false, true);
   }
 }
 

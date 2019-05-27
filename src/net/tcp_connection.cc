@@ -24,6 +24,8 @@ TcpConnection::TcpConnection(int connfd, const InetAddress &address, EventLoop *
         read_protected_size_(read_protected_size),
         read_buf_uptr_(new misc::SimpleBuffer()),
         write_buf_uptr_(new misc::SimpleBuffer()),
+        timeout_seconds_(0),
+        is_timeout_(false),
         data_sptr_(nullptr) {}
 
 TcpConnection::~TcpConnection() {
@@ -78,6 +80,10 @@ uint16_t TcpConnection::timeout_seconds() {
   return timeout_seconds_;
 }
 
+bool TcpConnection::is_timeout() {
+  return is_timeout_;
+}
+
 void TcpConnection::set_connected_callback(const TcpConnectionCallback &cb) {
   connected_callback_ = cb;
 }
@@ -120,12 +126,14 @@ void TcpConnection::ConnectEstablished(const misc::SimpleTimeSptr &happened_st_s
   }
 }
 
-void TcpConnection::Close(bool graceful) {
+void TcpConnection::Close(bool graceful, bool is_timeout) {
   if (graceful) {
     status_ = TcpConnectionStatus::kGracefulClose;
   } else {
     status_ = TcpConnectionStatus::kForceClose;
   }
+
+  is_timeout_ = is_timeout;
 }
 
 
