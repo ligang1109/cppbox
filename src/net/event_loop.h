@@ -42,7 +42,7 @@ class EventLoop : public misc::NonCopyable {
  private:
   void Wakeup();
 
-  void WakeupCallback(const misc::SimpleTimeSptr &happened_st_sptr);
+  void WakeupCallback(const misc::SimpleTimeSptr &happen_st_sptr);
 
   void HandleEvent(const EventSptr &event_sptr, uint32_t ready_events);
 
@@ -60,7 +60,7 @@ class EventLoop : public misc::NonCopyable {
 
   int timeout_ms_;
 
-  misc::SimpleTimeSptr happened_st_sptr_;
+  misc::SimpleTimeSptr happen_st_sptr_;
 
 };
 

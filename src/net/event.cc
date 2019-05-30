@@ -133,11 +133,11 @@ void TimeEvent::RunEvery(time_t interval_sec, const EventCallback &cb) {
   time_callback_ = cb;
 }
 
-void TimeEvent::TimeUpCallback(const misc::SimpleTimeSptr &happened_st_sptr) {
+void TimeEvent::TimeUpCallback(const misc::SimpleTimeSptr &happen_st_sptr) {
   uint64_t u;
   ::read(fd_, &u, sizeof(uint64_t));
 
-  time_callback_(happened_st_sptr);
+  time_callback_(happen_st_sptr);
 }
 
 }

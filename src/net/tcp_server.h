@@ -59,22 +59,22 @@ class TcpServer : public misc::NonCopyable {
 
     void Start();
 
-    void AddConnection(int connfd, const InetAddress &remote_addr, const misc::SimpleTimeSptr &happened_st_sptr, const std::string &trace_id);
+    void AddConnection(int connfd, const InetAddress &remote_addr, const misc::SimpleTimeSptr &happen_st_sptr, const std::string &trace_id);
 
     size_t ConnectionCount();
 
     void RunFunction(const EventLoop::Functor &func);
 
    private:
-    void DisconnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr);
+    void DisconnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr);
 
-    void ConnectionReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr);
+    void ConnectionReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr);
 
     void UpdateActiveConnection(const TcpConnectionSptr &tcp_conn_sptr);
 
     void ThreadFunc();
 
-    void AddConnectionInThread(int connfd, const InetAddress &remote_addr, const misc::SimpleTimeSptr &happened_st_sptr, const std::string &trace_id);
+    void AddConnectionInThread(int connfd, const InetAddress &remote_addr, const misc::SimpleTimeSptr &happen_st_sptr, const std::string &trace_id);
 
     int id_;
 
@@ -90,7 +90,7 @@ class TcpServer : public misc::NonCopyable {
 
   misc::ErrorUptr ListenAndServe();
 
-  void ListenCallback(const misc::SimpleTimeSptr &happened_st_sptr);
+  void ListenCallback(const misc::SimpleTimeSptr &happen_st_sptr);
 
   std::string ip_;
   uint16_t    port_;

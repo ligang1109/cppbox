@@ -27,7 +27,7 @@ class SimpleTime {
 
   std::string Format(const char *layout = kGeneralTimeLayout1);
 
-  void Update();
+  void Update(time_t tv_sec = 0, suseconds_t tv_usec = 0);
 
   void Add(time_t tv_sec);
 

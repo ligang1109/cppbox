@@ -78,11 +78,11 @@ class HttpServer : public misc::NonCopyable {
   void SetLogger(log::LoggerInterface *logger_ptr);
 
  private:
-  void ConnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr);
+  void ConnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr);
 
-  void ReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr);
+  void ReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr);
 
-  void WriteCompleteCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr);
+  void WriteCompleteCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr);
 
   void ProcessRequest(const TcpConnectionSptr &tcp_conn_sptr, const HttpConnectionSptr &http_conn_sptr);
 

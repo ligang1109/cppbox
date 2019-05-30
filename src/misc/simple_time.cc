@@ -48,8 +48,13 @@ std::string SimpleTime::Format(const char *layout) {
   return std::string(buf);
 }
 
-void SimpleTime::Update() {
-  gettimeofday(&tv_, nullptr);
+void SimpleTime::Update(time_t tv_sec, suseconds_t tv_usec) {
+  if (tv_sec == 0 && tv_usec == 0) {
+    gettimeofday(&tv_, nullptr);
+  } else {
+    tv_.tv_sec  = tv_sec;
+    tv_.tv_usec = tv_usec;
+  }
 }
 
 void SimpleTime::Add(time_t tv_sec) {

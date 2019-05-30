@@ -40,28 +40,28 @@ class TcpConnectionTest : public ::testing::Test {
   cppbox::net::TcpConnectionSptr tcp_conn_sptr_;
 
  private:
-  void ListenCallback(const cppbox::misc::SimpleTimeSptr &happened_st_sptr) {
+  void ListenCallback(const cppbox::misc::SimpleTimeSptr &happen_st_sptr) {
     cppbox::net::InetAddress raddr;
     int connfd = Accept(listenfd_, raddr);
 
     tcp_conn_sptr_ = std::make_shared<cppbox::net::TcpConnection>(connfd, raddr, event_loop_uptr_.get());
     tcp_conn_sptr_->set_connected_callback(std::bind(&TcpConnectionTest::ConnectedCallback, this, std::placeholders::_1, std::placeholders::_2));
     tcp_conn_sptr_->set_disconnected_callback(std::bind(&TcpConnectionTest::DisconnectedCallback, this, std::placeholders::_1, std::placeholders::_2));
-    tcp_conn_sptr_->ConnectEstablished(happened_st_sptr);
+    tcp_conn_sptr_->ConnectEstablished(happen_st_sptr);
   }
 
-  void ConnectedCallback(const cppbox::net::TcpConnectionSptr &tcp_conn_sptr, const cppbox::misc::SimpleTimeSptr &happened_st_sptr) {
+  void ConnectedCallback(const cppbox::net::TcpConnectionSptr &tcp_conn_sptr, const cppbox::misc::SimpleTimeSptr &happen_st_sptr) {
     std::cout << "connected" << std::endl;
     std::cout << tcp_conn_sptr_->remote_ip() << ":" << tcp_conn_sptr_->remote_port() << std::endl;
-    std::cout << happened_st_sptr->Format() << std::endl;
+    std::cout << happen_st_sptr->Format() << std::endl;
 
     event_loop_uptr_->Quit();
   }
 
-  void DisconnectedCallback(const cppbox::net::TcpConnectionSptr &tcp_conn_sptr, const cppbox::misc::SimpleTimeSptr &happened_st_sptr) {
+  void DisconnectedCallback(const cppbox::net::TcpConnectionSptr &tcp_conn_sptr, const cppbox::misc::SimpleTimeSptr &happen_st_sptr) {
     std::cout << "disconnected" << std::endl;
     std::cout << tcp_conn_sptr_->remote_ip() << ":" << tcp_conn_sptr_->remote_port() << std::endl;
-    std::cout << happened_st_sptr->Format() << std::endl;
+    std::cout << happen_st_sptr->Format() << std::endl;
   }
 
   int listenfd_;
@@ -71,7 +71,7 @@ TEST_F(TcpConnectionTest, Echo) {
   static int write_complete_cnt = 0;
 
   tcp_conn_sptr_->set_read_callback(
-          [=](cppbox::net::TcpConnectionSptr tcp_conn_sptr, cppbox::misc::SimpleTimeSptr happened_st_sptr) {
+          [=](cppbox::net::TcpConnectionSptr tcp_conn_sptr, cppbox::misc::SimpleTimeSptr happen_st_sptr) {
             std::cout << "connected time is " << tcp_conn_sptr->connected_time_sptr()->Format() << std::endl;
             std::cout << "last receive time is " << tcp_conn_sptr->last_receive_time_sptr()->Format() << std::endl;
 
@@ -89,7 +89,7 @@ TEST_F(TcpConnectionTest, Echo) {
           });
 
   tcp_conn_sptr_->set_write_complete_callback(
-          [=](cppbox::net::TcpConnectionSptr tcp_conn_sptr, cppbox::misc::SimpleTimeSptr happened_st_sptr) {
+          [=](cppbox::net::TcpConnectionSptr tcp_conn_sptr, cppbox::misc::SimpleTimeSptr happen_st_sptr) {
             std::cout << "write complete" << std::endl;
             write_complete_cnt++;
 
@@ -104,7 +104,7 @@ TEST_F(TcpConnectionTest, Echo) {
 
 TEST_F(TcpConnectionTest, File) {
   tcp_conn_sptr_->set_read_callback(
-          [=](cppbox::net::TcpConnectionSptr tcp_conn_sptr, cppbox::misc::SimpleTimeSptr happened_st_sptr) {
+          [=](cppbox::net::TcpConnectionSptr tcp_conn_sptr, cppbox::misc::SimpleTimeSptr happen_st_sptr) {
             char buf[100];
             auto r = tcp_conn_sptr->Receive(buf, sizeof(buf));
             std::string path(buf, r - 2);
@@ -146,7 +146,7 @@ TEST_F(TcpConnectionTest, File) {
           });
 
   tcp_conn_sptr_->set_write_complete_callback(
-          [=](cppbox::net::TcpConnectionSptr tcp_conn_sptr, cppbox::misc::SimpleTimeSptr happened_st_sptr) {
+          [=](cppbox::net::TcpConnectionSptr tcp_conn_sptr, cppbox::misc::SimpleTimeSptr happen_st_sptr) {
             std::cout << "write complete" << std::endl;
             event_loop_uptr_->Quit();
           });

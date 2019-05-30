@@ -65,23 +65,23 @@ class EchoServer {
   }
 
  private:
-  void ConnectedCallback(const cppbox::net::TcpConnectionSptr &tcp_conn_sptr, const cppbox::misc::SimpleTimeSptr &happened_st_sptr) {
+  void ConnectedCallback(const cppbox::net::TcpConnectionSptr &tcp_conn_sptr, const cppbox::misc::SimpleTimeSptr &happen_st_sptr) {
     std::cout << "connected in thread " << cppbox::net::TcpConnectionThreadId() << std::endl;
     std::cout << "client ip " << tcp_conn_sptr->remote_ip() << std::endl;
     std::cout << "client port " << tcp_conn_sptr->remote_port() << std::endl;
-    std::cout << "connected time " << happened_st_sptr->Format() << std::endl;
+    std::cout << "connected time " << happen_st_sptr->Format() << std::endl;
 
     tcp_conn_sptr->set_data_sptr(std::make_shared<MyTcpConnection>("new my tcp connection from echo server"));
   }
 
-  void DisconnectedCallback(const cppbox::net::TcpConnectionSptr &tcp_conn_sptr, const cppbox::misc::SimpleTimeSptr &happened_st_sptr) {
+  void DisconnectedCallback(const cppbox::net::TcpConnectionSptr &tcp_conn_sptr, const cppbox::misc::SimpleTimeSptr &happen_st_sptr) {
     std::cout << "disconnected in thread " << cppbox::net::TcpConnectionThreadId() << std::endl;
     std::cout << "client ip " << tcp_conn_sptr->remote_ip() << std::endl;
     std::cout << "client port " << tcp_conn_sptr->remote_port() << std::endl;
-    std::cout << "discnnected time " << happened_st_sptr->Format() << std::endl;
+    std::cout << "discnnected time " << happen_st_sptr->Format() << std::endl;
   }
 
-  void ReadCallback(const cppbox::net::TcpConnectionSptr &tcp_conn_sptr, const cppbox::misc::SimpleTimeSptr &happened_st_sptr) {
+  void ReadCallback(const cppbox::net::TcpConnectionSptr &tcp_conn_sptr, const cppbox::misc::SimpleTimeSptr &happen_st_sptr) {
     auto my_conn_sptr = std::static_pointer_cast<MyTcpConnection>(tcp_conn_sptr->data_sptr());
 
     std::cout << "in thread " << cppbox::net::TcpConnectionThreadId() << std::endl;

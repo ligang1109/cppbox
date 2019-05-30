@@ -17,9 +17,16 @@ TcpConnectionPool::TcpConnectionPool(size_t shard_size, size_t max_shard_cnt) :
   pool_[0].reserve(shard_size_);
 }
 
+size_t TcpConnectionPool::shard_size() {
+  return shard_size_;
+}
+
+size_t TcpConnectionPool::max_shard_cnt() {
+  return max_shard_cnt_;
+}
+
 bool TcpConnectionPool::Full() {
   return index_ == max_shard_cnt_;
-
 }
 
 bool TcpConnectionPool::Empty() {

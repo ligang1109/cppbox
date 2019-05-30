@@ -70,8 +70,8 @@ TEST_F(EventLoopTest, Time) {
   time_t interval = 5;
   std::cout << "now time is " + now_st_uptr->Format() << std::endl;
   te_sptr->RunAt(now_st_uptr->Sec() + interval,
-                 [event_loop_ptr](cppbox::misc::SimpleTimeSptr happened_st_sptr) {
-                   std::cout << "run at time is " + happened_st_sptr->Format() << std::endl;
+                 [event_loop_ptr](cppbox::misc::SimpleTimeSptr happen_st_sptr) {
+                   std::cout << "run at time is " + happen_st_sptr->Format() << std::endl;
                    event_loop_ptr->Quit();
                  });
 
@@ -81,8 +81,8 @@ TEST_F(EventLoopTest, Time) {
   now_st_uptr->Add(interval);
   std::cout << "now time is " + now_st_uptr->Format() << std::endl;
   te_sptr->RunAfter(interval,
-                    [event_loop_ptr](cppbox::misc::SimpleTimeSptr happened_st_sptr) {
-                      std::cout << "run after time is " + happened_st_sptr->Format() << std::endl;
+                    [event_loop_ptr](cppbox::misc::SimpleTimeSptr happen_st_sptr) {
+                      std::cout << "run after time is " + happen_st_sptr->Format() << std::endl;
                       event_loop_ptr->Quit();
                     });
 
@@ -92,8 +92,8 @@ TEST_F(EventLoopTest, Time) {
   now_st_uptr->Add(interval);
   std::cout << "now time is " + now_st_uptr->Format() << std::endl;
   te_sptr->RunEvery(interval,
-                    [event_loop_ptr, &i](cppbox::misc::SimpleTimeSptr happened_st_sptr) {
-                      std::cout << "run every time is " + happened_st_sptr->Format() << std::endl;
+                    [event_loop_ptr, &i](cppbox::misc::SimpleTimeSptr happen_st_sptr) {
+                      std::cout << "run every time is " + happen_st_sptr->Format() << std::endl;
                       std::cout << "run every count is " << i << std::endl;
 
                       ++i;
@@ -116,7 +116,7 @@ TEST_F(EventLoopTest, RW) {
 
   event_sptr->set_events(cppbox::net::Event::kReadEvents);
   event_sptr->set_read_callback(
-          [event_loop_ptr, sockfd, sbuf_ptr](cppbox::misc::SimpleTimeSptr happened_st_sptr) {
+          [event_loop_ptr, sockfd, sbuf_ptr](cppbox::misc::SimpleTimeSptr happen_st_sptr) {
             struct sockaddr_in clientAddr;
             memset(&clientAddr, 0, sizeof(struct sockaddr_in));
             socklen_t clientLen = 1;
@@ -130,7 +130,7 @@ TEST_F(EventLoopTest, RW) {
             auto cevent_sptr = std::make_shared<cppbox::net::Event>(connfd);
             cevent_sptr->set_events(cppbox::net::Event::kReadEvents);
             cevent_sptr->set_read_callback(
-                    [event_loop_ptr, connfd, sbuf_ptr](cppbox::misc::SimpleTimeSptr happened_st_sptr) {
+                    [event_loop_ptr, connfd, sbuf_ptr](cppbox::misc::SimpleTimeSptr happen_st_sptr) {
                       char buf[100];
                       auto n = ::read(connfd, buf, sizeof(buf));
                       if (n == 0) {
@@ -147,7 +147,7 @@ TEST_F(EventLoopTest, RW) {
                       event_loop_ptr->UpdateEvent(cevent_sptr);
                     });
             cevent_sptr->set_write_callback(
-                    [event_loop_ptr, connfd, sbuf_ptr](cppbox::misc::SimpleTimeSptr happened_st_sptr) {
+                    [event_loop_ptr, connfd, sbuf_ptr](cppbox::misc::SimpleTimeSptr happen_st_sptr) {
                       auto s = sbuf_ptr->ReadAllAsString();
                       std::cout << "send " + s << std::endl;
                       ::write(connfd, s.c_str(), s.size());

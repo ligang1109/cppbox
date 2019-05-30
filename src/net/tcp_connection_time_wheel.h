@@ -32,7 +32,7 @@ class TcpConnectionTimeWheel {
   size_t UpdateConnection(uint16_t hand, int connfd, uint16_t timeout_seconds);
 
  private:
-  void TimeRollFunc(const misc::SimpleTimeSptr &happened_st_sptr);
+  void TimeRollFunc(const misc::SimpleTimeSptr &happen_st_sptr);
 
   uint16_t CalHand(uint16_t timeout_seconds);
 

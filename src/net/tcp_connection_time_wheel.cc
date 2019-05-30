@@ -74,7 +74,7 @@ size_t TcpConnectionTimeWheel::UpdateConnection(uint16_t hand, int connfd, uint1
 }
 
 
-void TcpConnectionTimeWheel::TimeRollFunc(const misc::SimpleTimeSptr &happened_st_sptr) {
+void TcpConnectionTimeWheel::TimeRollFunc(const misc::SimpleTimeSptr &happen_st_sptr) {
   hand_ = (hand_ + 1) % kWheelSize;
 
   if (wheel_[hand_].empty()) {
@@ -85,7 +85,7 @@ void TcpConnectionTimeWheel::TimeRollFunc(const misc::SimpleTimeSptr &happened_s
   wheel_[hand_].swap(tm);
 
   for (auto &it : tm) {
-    it.second->Close(false, true);
+    it.second->Close(TcpConnection::ConnectionCloseFlag::kTimeout);
   }
 }
 

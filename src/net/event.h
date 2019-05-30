@@ -86,7 +86,7 @@ class TimeEvent : public Event {
   void RunEvery(time_t interval_sec, const EventCallback &cb);
 
  private:
-  void TimeUpCallback(const misc::SimpleTimeSptr &happened_st_sptr);
+  void TimeUpCallback(const misc::SimpleTimeSptr &happen_st_sptr);
 
   EventCallback time_callback_;
 };

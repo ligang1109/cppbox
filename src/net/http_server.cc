@@ -63,7 +63,7 @@ void HttpConnection::SendResponse(const TcpConnectionSptr &tcp_conn_sptr) {
   auto len = write_buf_ptr->Readable();
   auto n   = tcp_conn_sptr->SendWriteBuffer();
   if (n == -1) {
-    tcp_conn_sptr->Close(false);
+    tcp_conn_sptr->Close(TcpConnection::ConnectionCloseFlag::kForce);
     return;
   }
 
@@ -74,7 +74,7 @@ void HttpConnection::SendResponse(const TcpConnectionSptr &tcp_conn_sptr) {
 
 void HttpConnection::RequestProcessComplete(const TcpConnectionSptr &tcp_conn_sptr) {
   if (hstatus_ == HttpConnectionStatus::kWaitClose) {
-    tcp_conn_sptr->Close();
+    tcp_conn_sptr->Close(TcpConnection::ConnectionCloseFlag::kGraceful);
     return;
   }
 
@@ -128,7 +128,7 @@ void HttpServer::SetLogger(log::LoggerInterface *logger_ptr) {
   server_.set_logger_ptr(logger_ptr);
 }
 
-void HttpServer::ConnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr) {
+void HttpServer::ConnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr) {
   auto data_sptr = tcp_conn_sptr->data_sptr();
   if (data_sptr == nullptr) {
     tcp_conn_sptr->set_data_sptr(std::make_shared<HttpConnection>());
@@ -138,7 +138,7 @@ void HttpServer::ConnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const
   }
 }
 
-void HttpServer::ReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr) {
+void HttpServer::ReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr) {
   auto http_conn_sptr = std::static_pointer_cast<HttpConnection>(tcp_conn_sptr->data_sptr());
 
   bool parse_ok;
@@ -161,7 +161,7 @@ void HttpServer::ReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc
   }
 }
 
-void HttpServer::WriteCompleteCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happened_st_sptr) {
+void HttpServer::WriteCompleteCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr) {
   auto http_conn_sptr = std::static_pointer_cast<HttpConnection>(tcp_conn_sptr->data_sptr());
 
   http_conn_sptr->RequestProcessComplete(tcp_conn_sptr);

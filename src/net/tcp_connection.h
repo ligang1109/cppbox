@@ -19,16 +19,6 @@ namespace cppbox {
 
 namespace net {
 
-enum class TcpConnectionStatus {
-  kNotset        = 0,
-  kDisconnected  = 1,
-  kConnecting    = 2,
-  kConnected     = 3,
-  kGracefulClose = 4,
-  kForceClose    = 5,
-  kDisconnecting = 6,
-};
-
 
 class TcpConnection;
 
@@ -40,6 +30,21 @@ class TcpConnection : public misc::NonCopyable,
  public:
   using DestructCallback = std::function<void(TcpConnection &)>;
   using DataSptr = std::shared_ptr<void>;
+
+  enum class ConnectionStatus {
+    kNotset       = 0,
+    kDisconnected = 1,
+    kConnecting   = 2,
+    kConnected    = 3,
+    kWaitClose    = 4,
+  };
+
+  enum class ConnectionCloseFlag {
+    kNotset   = 0,
+    kGraceful = 1,
+    kForce    = 2,
+    kTimeout  = 3,
+  };
 
   explicit TcpConnection(int connfd, const InetAddress &address, EventLoop *loop_ptr, size_t read_protected_size = 4096);
 
@@ -57,17 +62,19 @@ class TcpConnection : public misc::NonCopyable,
 
   EventLoop *loop_ptr();
 
-  TcpConnectionStatus status();
+  ConnectionStatus status();
+
+  ConnectionCloseFlag close_flag();
 
   misc::SimpleTimeSptr connected_time_sptr();
 
   misc::SimpleTimeSptr last_receive_time_sptr();
 
+  misc::SimpleTimeSptr disconnected_time_sptr();
+
   void set_timeout_seconds(uint16_t timeout_seconds);
 
   uint16_t timeout_seconds();
-
-  bool is_timeout();
 
   void set_connected_callback(const TcpConnectionCallback &cb);
 
@@ -83,9 +90,9 @@ class TcpConnection : public misc::NonCopyable,
 
   DataSptr data_sptr();
 
-  void ConnectEstablished(const misc::SimpleTimeSptr &happened_st_sptr = nullptr);
+  void ConnectEstablished(const misc::SimpleTimeSptr &happen_st_sptr = nullptr);
 
-  void Close(bool graceful = true, bool is_timeout = false);
+  void Close(ConnectionCloseFlag flag);
 
   size_t Receive(char *data, size_t len);
 
@@ -102,19 +109,19 @@ class TcpConnection : public misc::NonCopyable,
   void Reuse(int connfd, const InetAddress &address, EventLoop *loop_ptr);
 
  protected:
-  void ReadFdCallback(const misc::SimpleTimeSptr &happened_st_sptr);
+  void ReadFdCallback(const misc::SimpleTimeSptr &happen_st_sptr);
 
-  void WriteFdCallback(const misc::SimpleTimeSptr &happened_st_sptr);
+  void WriteFdCallback(const misc::SimpleTimeSptr &happen_st_sptr);
 
-  void ErrorFdCallback(const misc::SimpleTimeSptr &happened_st_sptr);
+  void ErrorFdCallback(const misc::SimpleTimeSptr &happen_st_sptr);
 
   void EnsureWriteEvents();
 
   bool EnsureCloseAfterCallback();
 
-  void GracefulClose(const misc::SimpleTimeSptr &happened_st_sptr = nullptr);
+  void GracefulClose(const misc::SimpleTimeSptr &happen_st_sptr = nullptr);
 
-  void ForceClose(const misc::SimpleTimeSptr &happened_st_sptr = nullptr);
+  void ForceClose(const misc::SimpleTimeSptr &happen_st_sptr = nullptr);
 
   int         connfd_;
   std::string remote_ip_;
@@ -122,7 +129,8 @@ class TcpConnection : public misc::NonCopyable,
   std::string trace_id_;
 
   EventLoop           *loop_ptr_;
-  TcpConnectionStatus status_;
+  ConnectionStatus    status_;
+  ConnectionCloseFlag close_flag_;
   EventSptr           rw_event_sptr_;
   size_t              read_protected_size_;
 
@@ -131,8 +139,8 @@ class TcpConnection : public misc::NonCopyable,
 
   misc::SimpleTimeSptr connected_time_sptr_;
   misc::SimpleTimeSptr last_receive_time_sptr_;
+  misc::SimpleTimeSptr disconnected_time_sptr_;
   uint16_t             timeout_seconds_;
-  bool is_timeout_;
 
   TcpConnectionCallback connected_callback_;
   TcpConnectionCallback disconnected_callback_;

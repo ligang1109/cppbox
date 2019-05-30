@@ -19,6 +19,10 @@ class TcpConnectionPool {
  public:
   explicit TcpConnectionPool(size_t shard_size = 10000, size_t max_shard_cnt = 10);
 
+  size_t shard_size();
+
+  size_t max_shard_cnt();
+
   bool Full();
 
   bool Empty();
