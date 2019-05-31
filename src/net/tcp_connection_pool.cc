@@ -56,18 +56,12 @@ TcpConnectionSptr TcpConnectionPool::Get() {
     return nullptr;
   }
 
-  if (Full()) {
+  if (Full() || pool_[index_].empty()) {
     --index_;
   }
 
   auto tcp_conn_sptr = pool_[index_].back();
   pool_[index_].pop_back();
-
-  if (pool_[index_].empty()) {
-    if (index_ > 0) {
-      --index_;
-    }
-  }
 
   return tcp_conn_sptr;
 }

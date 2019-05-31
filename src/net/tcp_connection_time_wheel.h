@@ -17,7 +17,7 @@ class TcpConnectionTimeWheel {
   static const uint16_t kMaxConnIdleSeconds = 65535;
   static const size_t   kWheelSize          = 65536;
 
-  explicit TcpConnectionTimeWheel(EventLoop *loop_ptr);
+  explicit TcpConnectionTimeWheel(EventLoop *loop_ptr, const TcpConnectionCallback &timeout_callback);
 
   ~TcpConnectionTimeWheel();
 
@@ -41,6 +41,8 @@ class TcpConnectionTimeWheel {
 
   EventLoop     *loop_ptr_;
   TimeEventSptr time_event_sptr_;
+
+  TcpConnectionCallback timeout_callback_;
 };
 
 using TcpConnectionTimeWheelUptr = std::unique_ptr<TcpConnectionTimeWheel>;

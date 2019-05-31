@@ -9,11 +9,12 @@ namespace cppbox {
 namespace net {
 
 
-TcpConnectionTimeWheel::TcpConnectionTimeWheel(EventLoop *loop_ptr) :
+TcpConnectionTimeWheel::TcpConnectionTimeWheel(EventLoop *loop_ptr, const TcpConnectionCallback &timeout_callback) :
         hand_(0),
         wheel_(kWheelSize),
         loop_ptr_(loop_ptr),
-        time_event_sptr_(new TimeEvent()) {}
+        time_event_sptr_(new TimeEvent()),
+        timeout_callback_(timeout_callback) {}
 
 TcpConnectionTimeWheel::~TcpConnectionTimeWheel() {
   auto fd = time_event_sptr_->fd();
@@ -85,7 +86,7 @@ void TcpConnectionTimeWheel::TimeRollFunc(const misc::SimpleTimeSptr &happen_st_
   wheel_[hand_].swap(tm);
 
   for (auto &it : tm) {
-    it.second->Close(TcpConnection::ConnectionCloseFlag::kTimeout);
+    timeout_callback_(it.second, happen_st_sptr);
   }
 }
 

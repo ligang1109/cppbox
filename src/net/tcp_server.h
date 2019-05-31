@@ -68,6 +68,8 @@ class TcpServer : public misc::NonCopyable {
    private:
     void DisconnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr);
 
+    void TimeoutCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr);
+
     void ConnectionReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr);
 
     void UpdateActiveConnection(const TcpConnectionSptr &tcp_conn_sptr);

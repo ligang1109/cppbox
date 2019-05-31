@@ -63,7 +63,7 @@ void HttpConnection::SendResponse(const TcpConnectionSptr &tcp_conn_sptr) {
   auto len = write_buf_ptr->Readable();
   auto n   = tcp_conn_sptr->SendWriteBuffer();
   if (n == -1) {
-    tcp_conn_sptr->Close(TcpConnection::ConnectionCloseFlag::kForce);
+    tcp_conn_sptr->ForceClose();
     return;
   }
 
@@ -74,7 +74,7 @@ void HttpConnection::SendResponse(const TcpConnectionSptr &tcp_conn_sptr) {
 
 void HttpConnection::RequestProcessComplete(const TcpConnectionSptr &tcp_conn_sptr) {
   if (hstatus_ == HttpConnectionStatus::kWaitClose) {
-    tcp_conn_sptr->Close(TcpConnection::ConnectionCloseFlag::kGraceful);
+    tcp_conn_sptr->GracefulClose();
     return;
   }
 

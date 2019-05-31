@@ -32,18 +32,11 @@ class TcpConnection : public misc::NonCopyable,
   using DataSptr = std::shared_ptr<void>;
 
   enum class ConnectionStatus {
-    kNotset       = 0,
-    kDisconnected = 1,
-    kConnecting   = 2,
-    kConnected    = 3,
-    kWaitClose    = 4,
-  };
-
-  enum class ConnectionCloseFlag {
-    kNotset   = 0,
-    kGraceful = 1,
-    kForce    = 2,
-    kTimeout  = 3,
+    kNotset        = 0,
+    kConnecting    = 1,
+    kConnected     = 2,
+    kDisconnecting = 3,
+    kDisconnected  = 4,
   };
 
   explicit TcpConnection(int connfd, const InetAddress &address, EventLoop *loop_ptr, size_t read_protected_size = 4096);
@@ -63,8 +56,6 @@ class TcpConnection : public misc::NonCopyable,
   EventLoop *loop_ptr();
 
   ConnectionStatus status();
-
-  ConnectionCloseFlag close_flag();
 
   misc::SimpleTimeSptr connected_time_sptr();
 
@@ -92,13 +83,15 @@ class TcpConnection : public misc::NonCopyable,
 
   void ConnectEstablished(const misc::SimpleTimeSptr &happen_st_sptr = nullptr);
 
-  void Close(ConnectionCloseFlag flag);
-
   size_t Receive(char *data, size_t len);
 
   ssize_t Send(char *data, size_t len);
 
   ssize_t SendWriteBuffer();
+
+  void GracefulClose(const misc::SimpleTimeSptr &happen_st_sptr = nullptr);
+
+  void ForceClose(const misc::SimpleTimeSptr &happen_st_sptr = nullptr);
 
   misc::SimpleBuffer *ReadBuffer();
 
@@ -117,22 +110,15 @@ class TcpConnection : public misc::NonCopyable,
 
   void EnsureWriteEvents();
 
-  bool EnsureCloseAfterCallback();
-
-  void GracefulClose(const misc::SimpleTimeSptr &happen_st_sptr = nullptr);
-
-  void ForceClose(const misc::SimpleTimeSptr &happen_st_sptr = nullptr);
-
   int         connfd_;
   std::string remote_ip_;
   uint16_t    remote_port_;
   std::string trace_id_;
 
-  EventLoop           *loop_ptr_;
-  ConnectionStatus    status_;
-  ConnectionCloseFlag close_flag_;
-  EventSptr           rw_event_sptr_;
-  size_t              read_protected_size_;
+  EventLoop        *loop_ptr_;
+  ConnectionStatus status_;
+  EventSptr        rw_event_sptr_;
+  size_t           read_protected_size_;
 
   misc::SimpleBufferUptr read_buf_uptr_;
   misc::SimpleBufferUptr write_buf_uptr_;

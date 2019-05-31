@@ -176,9 +176,17 @@ misc::ErrorUptr TcpServer::ConnectionThread::Init(int loop_timeout_ms, int init_
     return err_uptr;
   }
 
-  time_wheel_uptr_.reset(new TcpConnectionTimeWheel(loop_uptr_.get()));
+  time_wheel_uptr_.reset(new TcpConnectionTimeWheel(loop_uptr_.get(),
+                                                    std::bind(&TcpServer::ConnectionThread::TimeoutCallback,
+                                                              this,
+                                                              std::placeholders::_1,
+                                                              std::placeholders::_2)));
+
   if (server_ptr_->default_conn_idle_seconds_ > 0) {
-    return time_wheel_uptr_->Init();
+    err_uptr = time_wheel_uptr_->Init();
+    if (err_uptr != nullptr) {
+      return err_uptr;
+    }
   }
 
   auto        size = pool_uptr_->shard_size();
@@ -216,7 +224,7 @@ void TcpServer::ConnectionThread::UpdateActiveConnection(const TcpConnectionSptr
   auto it     = conn_time_hand_map_.find(connfd);
   if (it == conn_time_hand_map_.end()) {
     server_ptr_->logger_ptr_->Error("tcp_conn is not in conn_time_hand_map");
-    tcp_conn_sptr->Close(TcpConnection::ConnectionCloseFlag::kForce);
+    tcp_conn_sptr->ForceClose();
     return;
   }
 
@@ -229,7 +237,7 @@ void TcpServer::ConnectionThread::UpdateActiveConnection(const TcpConnectionSptr
   auto new_hand = time_wheel_uptr_->UpdateConnection(old_hand, connfd, timeout_seconds);
   if (new_hand == TcpConnectionTimeWheel::kWheelSize) {
     server_ptr_->logger_ptr_->Error("tcp_conn is not in time_wheel");
-    tcp_conn_sptr->Close(TcpConnection::ConnectionCloseFlag::kForce);
+    tcp_conn_sptr->ForceClose();
     return;
   }
 
@@ -244,18 +252,25 @@ void TcpServer::ConnectionThread::DisconnectedCallback(const TcpConnectionSptr &
   }
 
   auto connfd = tcp_conn_sptr->connfd();
-
-  auto it = conn_time_hand_map_.find(connfd);
+  auto it     = conn_time_hand_map_.find(connfd);
   if (it != conn_time_hand_map_.end()) {
-    if (tcp_conn_sptr->close_flag() != TcpConnection::ConnectionCloseFlag::kTimeout) {
-      time_wheel_uptr_->DelConnection(it->second, connfd);
-    }
+    time_wheel_uptr_->DelConnection(it->second, connfd);
     conn_time_hand_map_.erase(it);
   }
 
   if (pool_uptr_->Put(tcp_conn_sptr)) {
     tcp_conn_sptr->Reset();
   }
+}
+
+void TcpServer::ConnectionThread::TimeoutCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr) {
+  auto connfd = tcp_conn_sptr->connfd();
+  auto it     = conn_time_hand_map_.find(connfd);
+  if (it != conn_time_hand_map_.end()) {
+    conn_time_hand_map_.erase(it);
+  }
+
+  tcp_conn_sptr->ForceClose(happen_st_sptr);
 }
 
 void TcpServer::ConnectionThread::ConnectionReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr) {
