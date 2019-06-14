@@ -12,8 +12,10 @@ set(CXX_FLAGS
         )
 
 set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
-set(BUILD_SRC_DIR ${PROJECT_BINARY_DIR}/src)
-set(VENDOR_DIR ${PROJECT_SOURCE_DIR}/vendor)
+set(CPPBOX_SRC_DIR ${PROJECT_SOURCE_DIR}/src/cppbox)
+set(BUILD_SRC_DIR ${PROJECT_BINARY_DIR}/src/cppbox)
+
+set(HEADER_INSTALL_PREFIX include/cppbox)
 
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -30,18 +32,20 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     )
 endif ()
 
+
+add_subdirectory(${SRC_DIR}/http-parser)
+
+
 include_directories(
         ${SRC_DIR}
-        ${VENDOR_DIR}
 )
 
-add_subdirectory(${VENDOR_DIR})
 
-set(MISC_SRC_DIR ${SRC_DIR}/misc)
+set(MISC_SRC_DIR ${CPPBOX_SRC_DIR}/misc)
 add_subdirectory(${MISC_SRC_DIR})
 
-set(LOG_SRC_DIR ${SRC_DIR}/log)
+set(LOG_SRC_DIR ${CPPBOX_SRC_DIR}/log)
 add_subdirectory(${LOG_SRC_DIR})
 
-set(NET_SRC_DIR ${SRC_DIR}/net)
+set(NET_SRC_DIR ${CPPBOX_SRC_DIR}/net)
 add_subdirectory(${NET_SRC_DIR})
