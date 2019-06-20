@@ -5,6 +5,7 @@
 #include "async_writer.h"
 
 #include <functional>
+#include <iostream>
 
 #include "cppbox/misc/misc.h"
 
@@ -36,7 +37,7 @@ size_t AsyncWriter::Flush() {
 }
 
 size_t AsyncWriter::Write(const char *msg, size_t len) {
-  std::lock_guard <std::mutex> lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
 
   if (len <= cur_buffer_uptr_->Writeable()) {
     cur_buffer_uptr_->Append(msg, len);
@@ -59,13 +60,13 @@ size_t AsyncWriter::Write(const char *msg, size_t len) {
 
 
 void AsyncWriter::WriteThreadFunc(int flush_seconds) {
-  misc::SimpleBufferUptr               cur_buffer_prepare  = misc::MakeUnique<misc::SimpleBuffer>(flush_size_);
-  misc::SimpleBufferUptr               next_buffer_prepare = misc::MakeUnique<misc::SimpleBuffer>(flush_size_);
-  std::vector <misc::SimpleBufferUptr> buffer_list_to_write;
+  misc::SimpleBufferUptr              cur_buffer_prepare  = misc::MakeUnique<misc::SimpleBuffer>(flush_size_);
+  misc::SimpleBufferUptr              next_buffer_prepare = misc::MakeUnique<misc::SimpleBuffer>(flush_size_);
+  std::vector<misc::SimpleBufferUptr> buffer_list_to_write;
 
   while (running_) {
     {
-      std::unique_lock <std::mutex> lock(mutex_);
+      std::unique_lock<std::mutex> lock(mutex_);
       if (buffer_list_.empty()) {
         cond_.wait_for(lock, std::chrono::seconds(flush_seconds));
       }
@@ -98,6 +99,14 @@ void AsyncWriter::WriteThreadFunc(int flush_seconds) {
 
     buffer_list_to_write.clear();
     writer_sptr_->Flush();
+  }
+
+  if (cur_buffer_uptr_->Readable() > 0) {
+    buffer_list_.push_back(std::move(cur_buffer_uptr_));
+  }
+
+  for (const auto &buffer_uptr : buffer_list_) {
+    writer_sptr_->Write(buffer_uptr->ReadBegin(), buffer_uptr->Readable());
   }
 }
 
