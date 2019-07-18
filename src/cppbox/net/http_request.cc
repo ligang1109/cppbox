@@ -16,12 +16,24 @@ std::string HttpRequest::method() {
   return method_;
 }
 
+void HttpRequest::set_method(const std::string &method) {
+  method_ = method;
+}
+
 std::string HttpRequest::raw_url() {
   return raw_url_;
 }
 
+void HttpRequest::set_raw_url(const std::string &raw_url) {
+  raw_url_ = raw_url;
+}
+
 std::string HttpRequest::raw_body() {
   return raw_body_;
+}
+
+void HttpRequest::set_raw_body(const std::string &raw_body) {
+  raw_body_ = raw_body;
 }
 
 std::string HttpRequest::raw_path() {
@@ -36,6 +48,15 @@ std::string HttpRequest::HeaderValue(const std::string &field) {
   }
 
   return it->second;
+}
+
+void HttpRequest::AddHeader(const std::string &field, const std::string &value) {
+  auto it = header_map_.find(field);
+  if (it == header_map_.end()) {
+    header_map_.emplace(field, value);
+  } else {
+    it->second = value;
+  }
 }
 
 std::string HttpRequest::QueryValue(const std::string &key) {
@@ -74,6 +95,26 @@ void HttpRequest::Reset() {
   header_map_.clear();
   query_values_.clear();
 }
+
+size_t HttpRequest::AppendToBuffer(misc::SimpleBuffer *sbuf_ptr) {
+  auto n = sbuf_ptr->Append(method_ + " " + raw_url_ + " HTTP/1.1\r\n");
+
+  for (const auto &header : header_map_) {
+    n += sbuf_ptr->Append(header.first + ": " + header.second + "\r\n");
+  }
+
+  if (!raw_body_.empty()) {
+    n += sbuf_ptr->Append("Content-Length: " + std::to_string(raw_body_.size()) + "\r\n");
+  }
+
+  n += sbuf_ptr->Append("\r\n");
+  if (!raw_body_.empty()) {
+    n += sbuf_ptr->Append(raw_body_);
+  }
+
+  return n;
+}
+
 
 void HttpRequest::ParseQueryValues(const char *raw_query_ptr, int len) {
   auto query     = misc::UrlDecode(raw_query_ptr, len);

@@ -30,7 +30,7 @@ class HttpServerTest : public ::testing::Test {
 };
 
 
-void DemoIndexFunc(const cppbox::net::TcpConnectionSptr &tcp_conn_sptr, const cppbox::net::HttpConnectionSptr &http_conn_sptr) {
+void DemoIndexFunc(const cppbox::net::HttpConnectionSptr &http_conn_sptr) {
   auto request_ptr  = http_conn_sptr->Request();
   auto response_ptr = http_conn_sptr->Response();
 
@@ -43,7 +43,7 @@ void DemoIndexFunc(const cppbox::net::TcpConnectionSptr &tcp_conn_sptr, const cp
   response_ptr->AddHeader("Response-by", "cppbox");
   response_ptr->set_body(body);
 
-  http_conn_sptr->SendResponse(tcp_conn_sptr);
+  http_conn_sptr->SendResponse();
 
   access_logger->Info("raw_url=" + request_ptr->raw_url());
 }
@@ -60,8 +60,7 @@ TEST_F(HttpServerTest, DemoServer) {
 
   server.AddHandleFunc("/demo/index", std::bind(
           DemoIndexFunc,
-          std::placeholders::_1,
-          std::placeholders::_2));
+          std::placeholders::_1));
 
   server.SetLogger(access_logger);
 

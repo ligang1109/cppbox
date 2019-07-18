@@ -72,15 +72,6 @@ bool Event::HasEvents(uint32_t events) {
   return (events_ & events) == events;
 }
 
-void Event::Reset() {
-  fd_     = 0;
-  events_ = 0;
-
-  read_callback_  = nullptr;
-  write_callback_ = nullptr;
-  error_callback_ = nullptr;
-}
-
 
 TimeEvent::~TimeEvent() {
   ::close(fd_);

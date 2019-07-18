@@ -22,6 +22,9 @@ void HttpParseData::Reset() {
   raw_path.clear();
   raw_query.clear();
 
+  status_code = 0;
+  status_msg.clear();
+
   header_map.clear();
 }
 
@@ -41,6 +44,13 @@ int ParseOnUrl(http_parser *parser, const char *at, size_t len) {
 }
 
 int ParseOnStatus(http_parser *parser, const char *at, size_t len) {
+  auto pdata_ptr = static_cast<HttpParseData *>(parser->data);
+
+  if (len > 0) {
+    pdata_ptr->status_code = parser->status_code;
+    pdata_ptr->status_msg.append(at, len);
+  }
+
   return 0;
 }
 
@@ -130,7 +140,7 @@ int ParseOnChunkComplete(http_parser *parser) {
 
 HttpParser::HttpParser(HttpParseData *pdata) {
   parser_.data = pdata;
-  http_parser_init(&parser_, HTTP_REQUEST);
+  http_parser_init(&parser_, HTTP_BOTH);
 
   settings_.on_message_begin    = ParseOnMessageBegin;
   settings_.on_url              = ParseOnUrl;
@@ -159,7 +169,7 @@ size_t HttpParser::Execute(char *buf, size_t len) {
 }
 
 void HttpParser::Reset() {
-  http_parser_init(&parser_, HTTP_REQUEST);
+  http_parser_init(&parser_, HTTP_BOTH);
 }
 
 

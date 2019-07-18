@@ -11,7 +11,9 @@ set(NET_HEADER_LIST
         ${NET_SRC_DIR}/http_parse.h
         ${NET_SRC_DIR}/http_request.h
         ${NET_SRC_DIR}/http_response.h
+        ${NET_SRC_DIR}/http_connection.h
         ${NET_SRC_DIR}/http_server.h
+        ${NET_SRC_DIR}/http_client.h
         )
 
 install(FILES ${NET_HEADER_LIST}
@@ -31,7 +33,9 @@ set(NET_SRC_LIST
         ${NET_SRC_DIR}/http_parse.cc
         ${NET_SRC_DIR}/http_request.cc
         ${NET_SRC_DIR}/http_response.cc
+        ${NET_SRC_DIR}/http_connection.cc
         ${NET_SRC_DIR}/http_server.cc
+        ${NET_SRC_DIR}/http_client.cc
 
         ${SRC_DIR}/http-parser/http_parser.c
         )

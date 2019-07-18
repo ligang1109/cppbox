@@ -5,6 +5,8 @@
 #ifndef CPPBOX_NET_HTTP_REQUEST_H
 #define CPPBOX_NET_HTTP_REQUEST_H
 
+#include "cppbox/misc/simple_buffer.h"
+
 #include "http_parse.h"
 
 
@@ -17,13 +19,21 @@ class HttpRequest : public misc::NonCopyable {
  public:
   std::string method();
 
+  void set_method(const std::string &method);
+
   std::string raw_url();
 
+  void set_raw_url(const std::string &raw_url);
+
   std::string raw_body();
+
+  void set_raw_body(const std::string &raw_body);
 
   std::string raw_path();
 
   std::string HeaderValue(const std::string &field);
+
+  void AddHeader(const std::string &field, const std::string &value);
 
   std::string QueryValue(const std::string &key);
 
@@ -32,6 +42,8 @@ class HttpRequest : public misc::NonCopyable {
   void ParseFormBody();
 
   void Reset();
+
+  size_t AppendToBuffer(misc::SimpleBuffer *sbuf_ptr);
 
  private:
   void ParseQueryValues(const char *query_ptr, int len);

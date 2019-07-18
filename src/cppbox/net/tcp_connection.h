@@ -28,9 +28,6 @@ using TcpConnectionCallback = std::function<void(const TcpConnectionSptr &, cons
 class TcpConnection : public misc::NonCopyable,
                       public std::enable_shared_from_this<TcpConnection> {
  public:
-  using DestructCallback = std::function<void(TcpConnection &)>;
-  using DataSptr = std::shared_ptr<void>;
-
   enum class ConnectionStatus {
     kNotset        = 0,
     kConnecting    = 1,
@@ -41,7 +38,7 @@ class TcpConnection : public misc::NonCopyable,
 
   explicit TcpConnection(int connfd, const InetAddress &address, EventLoop *loop_ptr, size_t read_protected_size = 4096);
 
-  ~TcpConnection();
+  virtual ~TcpConnection();
 
   int connfd();
 
@@ -77,9 +74,7 @@ class TcpConnection : public misc::NonCopyable,
 
   void set_error_callback(const TcpConnectionCallback &cb);
 
-  void set_data_sptr(const DataSptr &data_sptr);
-
-  DataSptr data_sptr();
+  void set_timeout_callback(const TcpConnectionCallback &cb);
 
   void ConnectEstablished(const misc::SimpleTimeSptr &happen_st_sptr = nullptr);
 
@@ -99,7 +94,11 @@ class TcpConnection : public misc::NonCopyable,
 
   void Reset();
 
+  virtual void ResetMore();
+
   void Reuse(int connfd, const InetAddress &address, EventLoop *loop_ptr);
+
+  void TimeoutCallback(const misc::SimpleTimeSptr &happen_st_sptr);
 
  protected:
   void ReadFdCallback(const misc::SimpleTimeSptr &happen_st_sptr);
@@ -133,8 +132,7 @@ class TcpConnection : public misc::NonCopyable,
   TcpConnectionCallback read_callback_;
   TcpConnectionCallback write_complete_callback_;
   TcpConnectionCallback error_callback_;
-
-  DataSptr data_sptr_;
+  TcpConnectionCallback timeout_callback_;
 };
 
 

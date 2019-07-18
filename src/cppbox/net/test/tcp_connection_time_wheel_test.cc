@@ -14,7 +14,7 @@ class TcpConnectionTimeWheelTest : public ::testing::Test {
  protected:
   TcpConnectionTimeWheelTest() :
           loop_uptr_(new cppbox::net::EventLoop()),
-          wheel_uptr_(new cppbox::net::TcpConnectionTimeWheel(loop_uptr_.get(), Timeoutallback)) {
+          wheel_uptr_(new cppbox::net::TcpConnectionTimeWheel(loop_uptr_.get())) {
     loop_uptr_->Init();
     wheel_uptr_->Init();
   }
@@ -32,6 +32,7 @@ TEST_F(TcpConnectionTimeWheelTest, Roll) {
     cppbox::net::InetAddress address;
 
     auto tcp_conn_sptr = std::make_shared<cppbox::net::TcpConnection>(i + 10, address, loop_uptr_.get());
+    tcp_conn_sptr->set_timeout_callback(Timeoutallback);
     wheel_uptr_->AddConnection(tcp_conn_sptr, i + 1);
   }
 

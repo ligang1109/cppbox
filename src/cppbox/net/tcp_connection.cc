@@ -26,8 +26,11 @@ TcpConnection::TcpConnection(int connfd, const InetAddress &address, EventLoop *
         connected_time_sptr_(new misc::SimpleTime()),
         last_receive_time_sptr_(new misc::SimpleTime()),
         disconnected_time_sptr_(new misc::SimpleTime()),
-        timeout_seconds_(0),
-        data_sptr_(nullptr) {}
+        timeout_seconds_(0) {
+  rw_event_sptr_->set_read_callback(std::bind(&TcpConnection::ReadFdCallback, this, std::placeholders::_1));
+  rw_event_sptr_->set_error_callback(std::bind(&TcpConnection::ErrorFdCallback, this, std::placeholders::_1));
+  rw_event_sptr_->set_write_callback(std::bind(&TcpConnection::WriteFdCallback, this, std::placeholders::_1));
+}
 
 TcpConnection::~TcpConnection() {
   if (status_ != ConnectionStatus::kDisconnected) {
@@ -106,12 +109,8 @@ void TcpConnection::set_error_callback(const TcpConnectionCallback &cb) {
   error_callback_ = cb;
 }
 
-void TcpConnection::set_data_sptr(const TcpConnection::DataSptr &data_sptr) {
-  data_sptr_ = data_sptr;
-}
-
-TcpConnection::DataSptr TcpConnection::data_sptr() {
-  return data_sptr_;
+void TcpConnection::set_timeout_callback(const TcpConnectionCallback &cb) {
+  timeout_callback_ = cb;
 }
 
 void TcpConnection::ConnectEstablished(const misc::SimpleTimeSptr &happen_st_sptr) {
@@ -123,15 +122,12 @@ void TcpConnection::ConnectEstablished(const misc::SimpleTimeSptr &happen_st_spt
   }
 
   rw_event_sptr_->set_events(Event::kReadEvents | Event::kErrorEvents);
-  rw_event_sptr_->set_read_callback(std::bind(&TcpConnection::ReadFdCallback, this, std::placeholders::_1));
-  rw_event_sptr_->set_error_callback(std::bind(&TcpConnection::ErrorFdCallback, this, std::placeholders::_1));
   loop_ptr_->UpdateEvent(rw_event_sptr_);
 
   if (connected_callback_) {
     connected_callback_(shared_from_this(), connected_time_sptr_);
   }
 }
-
 
 size_t TcpConnection::Receive(char *data, size_t len) {
   return read_buf_uptr_->Read(data, len);
@@ -257,19 +253,19 @@ void TcpConnection::Reset() {
 
   loop_ptr_ = nullptr;
   status_   = ConnectionStatus::kNotset;
-  rw_event_sptr_->Reset();
+
+  rw_event_sptr_->set_fd(0);
+  rw_event_sptr_->set_events(0);
 
   read_buf_uptr_->Reset();
   write_buf_uptr_->Reset();
 
   timeout_seconds_ = 0;
 
-  connected_callback_      = nullptr;
-  disconnected_callback_   = nullptr;
-  read_callback_           = nullptr;
-  write_complete_callback_ = nullptr;
-  error_callback_          = nullptr;
+  ResetMore();
 }
+
+void TcpConnection::ResetMore() {}
 
 void TcpConnection::Reuse(int connfd, const InetAddress &address, EventLoop *loop_ptr) {
   connfd_ = connfd;
@@ -280,6 +276,11 @@ void TcpConnection::Reuse(int connfd, const InetAddress &address, EventLoop *loo
   loop_ptr_    = loop_ptr;
 }
 
+void TcpConnection::TimeoutCallback(const misc::SimpleTimeSptr &happen_st_sptr) {
+  if (timeout_callback_) {
+    timeout_callback_(shared_from_this(), happen_st_sptr);
+  }
+}
 
 void TcpConnection::ReadFdCallback(const misc::SimpleTimeSptr &happen_st_sptr) {
   if (read_protected_size_ > 0) {
@@ -403,7 +404,6 @@ void TcpConnection::ErrorFdCallback(const misc::SimpleTimeSptr &happen_st_sptr) 
 void TcpConnection::EnsureWriteEvents() {
   if (!rw_event_sptr_->HasEvents(Event::kWriteEvents)) {
     rw_event_sptr_->AddEvents(Event::kWriteEvents);
-    rw_event_sptr_->set_write_callback(std::bind(&TcpConnection::WriteFdCallback, this, std::placeholders::_1));
     loop_ptr_->UpdateEvent(rw_event_sptr_);
   }
 }

@@ -9,7 +9,8 @@
 #include <map>
 
 #include "cppbox/misc/simple_buffer.h"
-#include "cppbox/misc/non_copyable.h"
+
+#include "http_parse.h"
 
 
 namespace cppbox {
@@ -30,6 +31,8 @@ class HttpResponse : public misc::NonCopyable {
   size_t AppendToBuffer(misc::SimpleBuffer *sbuf_ptr);
 
   void Reset();
+
+  void ConvertFromData(HttpParseData &&pdata);
 
  private:
   int         status_code_;

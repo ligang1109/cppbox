@@ -58,8 +58,6 @@ class Event : public misc::NonCopyable {
 
   bool HasEvents(uint32_t events);
 
-  void Reset();
-
  protected:
   int fd_;
   uint32_t events_;

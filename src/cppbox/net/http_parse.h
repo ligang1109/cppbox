@@ -31,6 +31,9 @@ struct HttpParseData {
   std::string raw_path;
   std::string raw_query;
 
+  int         status_code;
+  std::string status_msg;
+
   std::map<std::string, std::string> header_map;
 
   void Reset();

@@ -38,7 +38,7 @@ struct InetAddress {
 
 int Accept(int listenfd, struct InetAddress &address, int flags = SOCK_CLOEXEC | SOCK_NONBLOCK);
 
-misc::ErrorUptr  Connect(int sockfd, const char *ip, uint16_t port);
+misc::ErrorUptr Connect(int sockfd, const char *ip, uint16_t port);
 
 
 }

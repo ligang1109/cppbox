@@ -6,12 +6,7 @@
 #define CPPBOX_NET_HTTP_SERVER_H
 
 #include "tcp_server.h"
-
-#include "http_parse.h"
-#include "http_response.h"
-#include "http_request.h"
-
-#include "cppbox/misc/non_copyable.h"
+#include "http_connection.h"
 
 #include "cppbox/log/base.h"
 
@@ -20,49 +15,8 @@ namespace cppbox {
 
 namespace net {
 
-enum class HttpConnectionStatus {
-  kWaitRequest          = 1,
-  kParseRequest         = 2,
-  KParseRequestComplete = 3,
-  kProcessRequest       = 4,
-  kWaitClose            = 5,
-};
 
-class HttpConnection : misc::NonCopyable {
- public:
-  HttpConnection();
-
-  HttpConnectionStatus hstatus();
-
-  void set_hstatus(HttpConnectionStatus hstatus);
-
-  HttpRequest *Request();
-
-  HttpResponse *Response();
-
-  bool ParseRequest(misc::SimpleBuffer *rbuf_ptr);
-
-  void SendError(const TcpConnectionSptr &tcp_conn_sptr, int code, const std::string &msg);
-
-  void SendResponse(const TcpConnectionSptr &tcp_conn_sptr);
-
-  void RequestProcessComplete(const TcpConnectionSptr &tcp_conn_sptr);
-
-  void Reset();
-
- private:
-  HttpConnectionStatus hstatus_;
-
-  HttpParseDataUptr pdata_uptr_;
-  HttpParserUptr    parser_uptr_;
-
-  HttpRequestUptr  request_uptr_;
-  HttpResponseUptr response_uptr_;
-};
-
-using HttpConnectionSptr = std::shared_ptr<HttpConnection>;
-
-using HttpHandleFunc = std::function<void(const TcpConnectionSptr &, const HttpConnectionSptr &)>;
+using HttpHandleFunc = std::function<void(const HttpConnectionSptr &)>;
 
 class HttpServer : public misc::NonCopyable {
  public:
@@ -78,13 +32,13 @@ class HttpServer : public misc::NonCopyable {
   void SetLogger(log::LoggerInterface *logger_ptr);
 
  private:
-  void ConnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr);
+  static HttpConnectionSptr NewConnection(int connfd, const InetAddress &remote_addr, EventLoop *loop_ptr);
 
   void ReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr);
 
-  void WriteCompleteCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr);
+  static void WriteCompleteCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr);
 
-  void ProcessRequest(const TcpConnectionSptr &tcp_conn_sptr, const HttpConnectionSptr &http_conn_sptr);
+  void ProcessRequest(const HttpConnectionSptr &http_conn_sptr);
 
   TcpServer server_;
 

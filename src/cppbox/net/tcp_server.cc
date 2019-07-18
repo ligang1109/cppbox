@@ -39,6 +39,10 @@ void TcpServer::set_logger_ptr(log::LoggerInterface *logger_ptr) {
   logger_ptr_ = logger_ptr;
 }
 
+void TcpServer::set_new_conn_func(const NewConnectionFunc &func) {
+  new_conn_func_ = func;
+}
+
 void TcpServer::set_connected_callback(const TcpConnectionCallback &cb) {
   connected_callback_ = cb;
 }
@@ -96,11 +100,23 @@ misc::ErrorUptr TcpServer::Start() {
 
   logger_ptr_->Debug("TcpServer::Start");
 
+  if (new_conn_func_ == nullptr) {
+    new_conn_func_ = std::bind(
+            &TcpServer::DefaultNewConnection,
+            std::placeholders::_1,
+            std::placeholders::_2,
+            std::placeholders::_3);
+  }
+
   for (auto &conn_thread_uptr : conn_thread_list_) {
     conn_thread_uptr->Start();
   }
 
   return ListenAndServe();
+}
+
+size_t TcpServer::ConnectionThreadCount() {
+  return conn_thread_list_.size();
 }
 
 size_t TcpServer::ConnectionCount() {
@@ -117,6 +133,15 @@ void TcpServer::RunFunctionInConnectionThread(int conn_thread_id, const EventLoo
     conn_thread_list_[conn_thread_id]->RunFunction(func);
   }
 }
+
+EventLoop *TcpServer::ConnectionThreadLoop(int conn_thread_id) {
+  return conn_thread_list_[conn_thread_id]->Loop();
+}
+
+TcpConnectionTimeWheel *TcpServer::ConnectionThreadTimeWheel(int conn_thread_id) {
+  return conn_thread_list_[conn_thread_id]->TimeWheel();
+}
+
 
 misc::ErrorUptr TcpServer::ListenAndServe() {
   auto err_uptr = BindAndListenForTcpIpV4(listenfd_, ip_.c_str(), port_);
@@ -160,14 +185,33 @@ void TcpServer::ListenCallback(const misc::SimpleTimeSptr &happen_st_sptr) {
   dispatch_index_ = (dispatch_index_ + 1) % conn_thread_list_.size();
 }
 
+TcpConnectionSptr TcpServer::DefaultNewConnection(int connfd, const cppbox::net::InetAddress &remote_addr, EventLoop *loop_ptr) {
+  return std::make_shared<TcpConnection>(connfd, remote_addr, loop_ptr);
+}
+
 
 TcpServer::ConnectionThread::ConnectionThread(int id, TcpServer *server_ptr, size_t tcp_conn_pool_shard_size, size_t tcp_conn_pool_max_shard_cnt) :
         id_(id),
+        conn_cnt_(0),
         server_ptr_(server_ptr),
         thread_uptr_(nullptr),
         loop_uptr_(nullptr),
         time_wheel_uptr_(nullptr),
-        pool_uptr_(new TcpConnectionPool(tcp_conn_pool_shard_size, tcp_conn_pool_max_shard_cnt)) {}
+        pool_uptr_(new TcpConnectionPool(tcp_conn_pool_shard_size, tcp_conn_pool_max_shard_cnt)) {
+  disconnected_callback_ = std::bind(&TcpServer::ConnectionThread::DisconnectedCallback,
+                                     this,
+                                     std::placeholders::_1,
+                                     std::placeholders::_2);
+
+  connection_read_callback_ = std::bind(&TcpServer::ConnectionThread::ConnectionReadCallback,
+                                        this,
+                                        std::placeholders::_1,
+                                        std::placeholders::_2);
+
+  timeout_callback_ = std::bind(&TcpServer::ConnectionThread::TimeoutCallback,
+                                std::placeholders::_1,
+                                std::placeholders::_2);
+}
 
 misc::ErrorUptr TcpServer::ConnectionThread::Init(int loop_timeout_ms, int init_evlist_size) {
   loop_uptr_.reset(new EventLoop(loop_timeout_ms));
@@ -176,11 +220,7 @@ misc::ErrorUptr TcpServer::ConnectionThread::Init(int loop_timeout_ms, int init_
     return err_uptr;
   }
 
-  time_wheel_uptr_.reset(new TcpConnectionTimeWheel(loop_uptr_.get(),
-                                                    std::bind(&TcpServer::ConnectionThread::TimeoutCallback,
-                                                              this,
-                                                              std::placeholders::_1,
-                                                              std::placeholders::_2)));
+  time_wheel_uptr_.reset(new TcpConnectionTimeWheel(loop_uptr_.get()));
 
   if (server_ptr_->default_conn_idle_seconds_ > 0) {
     err_uptr = time_wheel_uptr_->Init();
@@ -189,17 +229,19 @@ misc::ErrorUptr TcpServer::ConnectionThread::Init(int loop_timeout_ms, int init_
     }
   }
 
-  auto        size = pool_uptr_->shard_size();
-  InetAddress address;
-
-  for (auto i = 0; i < size; ++i) {
-    pool_uptr_->Put(std::make_shared<TcpConnection>(0, address, nullptr));
-  }
-
   return nullptr;
 }
 
 void TcpServer::ConnectionThread::Start() {
+  auto        size = pool_uptr_->shard_size();
+  InetAddress address;
+
+  for (auto i = 0; i < size; ++i) {
+    auto tcp_conn_sptr = server_ptr_->new_conn_func_(0, address, nullptr);
+    InitConnectionCallback(tcp_conn_sptr);
+    pool_uptr_->Put(tcp_conn_sptr);
+  }
+
   thread_uptr_.reset(new std::thread(
           std::bind(&TcpServer::ConnectionThread::ThreadFunc, this)
                                     ));
@@ -212,38 +254,29 @@ void TcpServer::ConnectionThread::AddConnection(int connfd, const InetAddress &r
 }
 
 size_t TcpServer::ConnectionThread::ConnectionCount() {
-  return conn_time_hand_map_.size();
+  return conn_cnt_;
 }
 
 void TcpServer::ConnectionThread::RunFunction(const EventLoop::Functor &func) {
   loop_uptr_->AppendFunction(func);
 }
 
-void TcpServer::ConnectionThread::UpdateActiveConnection(const TcpConnectionSptr &tcp_conn_sptr) {
-  auto connfd = tcp_conn_sptr->connfd();
-  auto it     = conn_time_hand_map_.find(connfd);
-  if (it == conn_time_hand_map_.end()) {
-    server_ptr_->logger_ptr_->Error("tcp_conn is not in conn_time_hand_map");
-    tcp_conn_sptr->ForceClose();
-    return;
-  }
+EventLoop *TcpServer::ConnectionThread::Loop() {
+  return loop_uptr_.get();
+}
 
-  auto old_hand        = it->second;
+TcpConnectionTimeWheel *TcpServer::ConnectionThread::TimeWheel() {
+  return time_wheel_uptr_.get();
+}
+
+
+void TcpServer::ConnectionThread::UpdateActiveConnection(const TcpConnectionSptr &tcp_conn_sptr) {
   auto timeout_seconds = tcp_conn_sptr->timeout_seconds();
   if (timeout_seconds == 0) {
     timeout_seconds = server_ptr_->default_conn_idle_seconds_;
   }
 
-  auto new_hand = time_wheel_uptr_->UpdateConnection(old_hand, connfd, timeout_seconds);
-  if (new_hand == TcpConnectionTimeWheel::kWheelSize) {
-    server_ptr_->logger_ptr_->Error("tcp_conn is not in time_wheel");
-    tcp_conn_sptr->ForceClose();
-    return;
-  }
-
-  if (new_hand != old_hand) {
-    it->second = new_hand;
-  }
+  time_wheel_uptr_->UpdateConnection(tcp_conn_sptr->connfd(), timeout_seconds);
 }
 
 void TcpServer::ConnectionThread::DisconnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr) {
@@ -251,25 +284,14 @@ void TcpServer::ConnectionThread::DisconnectedCallback(const TcpConnectionSptr &
     server_ptr_->disconnected_callback_(tcp_conn_sptr, happen_st_sptr);
   }
 
-  auto connfd = tcp_conn_sptr->connfd();
-  auto it     = conn_time_hand_map_.find(connfd);
-  if (it != conn_time_hand_map_.end()) {
-    time_wheel_uptr_->DelConnection(it->second, connfd);
-    conn_time_hand_map_.erase(it);
-  }
-
   if (pool_uptr_->Put(tcp_conn_sptr)) {
     tcp_conn_sptr->Reset();
   }
+
+  --conn_cnt_;
 }
 
 void TcpServer::ConnectionThread::TimeoutCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr) {
-  auto connfd = tcp_conn_sptr->connfd();
-  auto it     = conn_time_hand_map_.find(connfd);
-  if (it != conn_time_hand_map_.end()) {
-    conn_time_hand_map_.erase(it);
-  }
-
   tcp_conn_sptr->ForceClose(happen_st_sptr);
 }
 
@@ -287,31 +309,14 @@ void TcpServer::ConnectionThread::ThreadFunc() {
   loop_uptr_->Loop();
 }
 
-void TcpServer::ConnectionThread::AddConnectionInThread(int connfd, const InetAddress &remote_addr, const misc::SimpleTimeSptr &happen_st_sptr, const std::string &trace_id) {
-  auto tcp_conn_sptr = pool_uptr_->Get();
-  if (tcp_conn_sptr == nullptr) {
-    tcp_conn_sptr = std::make_shared<TcpConnection>(connfd, remote_addr, loop_uptr_.get());
-  } else {
-    tcp_conn_sptr->Reuse(connfd, remote_addr, loop_uptr_.get());
-  }
-
-  tcp_conn_sptr->set_trace_id(trace_id);
-
+void TcpServer::ConnectionThread::InitConnectionCallback(const TcpConnectionSptr &tcp_conn_sptr) {
   if (server_ptr_->connected_callback_ != nullptr) {
     tcp_conn_sptr->set_connected_callback(server_ptr_->connected_callback_);
   }
 
-  tcp_conn_sptr->set_disconnected_callback(
-          std::bind(&TcpServer::ConnectionThread::DisconnectedCallback,
-                    this,
-                    std::placeholders::_1,
-                    std::placeholders::_2));
-
-  tcp_conn_sptr->set_read_callback(
-          std::bind(&TcpServer::ConnectionThread::ConnectionReadCallback,
-                    this,
-                    std::placeholders::_1,
-                    std::placeholders::_2));
+  tcp_conn_sptr->set_disconnected_callback(disconnected_callback_);
+  tcp_conn_sptr->set_read_callback(connection_read_callback_);
+  tcp_conn_sptr->set_timeout_callback(timeout_callback_);
 
   if (server_ptr_->write_complete_callback_ != nullptr) {
     tcp_conn_sptr->set_write_complete_callback(server_ptr_->write_complete_callback_);
@@ -320,15 +325,28 @@ void TcpServer::ConnectionThread::AddConnectionInThread(int connfd, const InetAd
   if (server_ptr_->error_callback_ != nullptr) {
     tcp_conn_sptr->set_error_callback(server_ptr_->error_callback_);
   }
+}
+
+void TcpServer::ConnectionThread::AddConnectionInThread(int connfd, const InetAddress &remote_addr, const misc::SimpleTimeSptr &happen_st_sptr, const std::string &trace_id) {
+  auto tcp_conn_sptr = pool_uptr_->Get();
+  if (tcp_conn_sptr == nullptr) {
+    tcp_conn_sptr = server_ptr_->new_conn_func_(connfd, remote_addr, loop_uptr_.get());
+    InitConnectionCallback(tcp_conn_sptr);
+  } else {
+    tcp_conn_sptr->Reuse(connfd, remote_addr, loop_uptr_.get());
+  }
+
+  tcp_conn_sptr->set_trace_id(trace_id);
 
   auto timeout_seconds = tcp_conn_sptr->timeout_seconds();
   if (timeout_seconds == 0) {
     timeout_seconds = server_ptr_->default_conn_idle_seconds_;
   }
-
-  conn_time_hand_map_.emplace(connfd, time_wheel_uptr_->AddConnection(tcp_conn_sptr, timeout_seconds));
+  time_wheel_uptr_->AddConnection(tcp_conn_sptr, timeout_seconds);
 
   tcp_conn_sptr->ConnectEstablished(happen_st_sptr);
+
+  ++conn_cnt_;
 }
 
 
