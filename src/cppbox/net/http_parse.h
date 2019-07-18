@@ -19,11 +19,11 @@ namespace net {
 
 
 struct HttpParseData {
-  bool last_parsed_was_value;
+  bool        last_parsed_was_value;
   std::string last_header_field;
   std::string last_header_value;
 
-  bool        parse_complete;
+  bool parse_complete;
 
   std::string method;
   std::string raw_url;

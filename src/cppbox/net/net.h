@@ -30,12 +30,15 @@ misc::ErrorUptr Listen(int sockfd, int backlog = kDefaultBacklog);
 
 misc::ErrorUptr BindAndListenForTcpIpV4(int sockfd, const char *ip, uint16_t port, bool reuseaddr = true, int backlog = kDefaultBacklog);
 
+
 struct InetAddress {
   std::string ip;
   uint16_t    port;
 };
 
 int Accept(int listenfd, struct InetAddress &address, int flags = SOCK_CLOEXEC | SOCK_NONBLOCK);
+
+misc::ErrorUptr  Connect(int sockfd, const char *ip, uint16_t port);
 
 
 }

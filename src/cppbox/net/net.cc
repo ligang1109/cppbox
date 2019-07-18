@@ -36,7 +36,7 @@ misc::ErrorUptr SetReuseAddr(int sockfd) {
 
 misc::ErrorUptr BindForTcpIpV4(int sockfd, const char *ip, uint16_t port) {
   struct sockaddr_in serverAddr;
-  memset(&serverAddr, 0, sizeof(struct sockaddr_in));
+  ::memset(&serverAddr, 0, sizeof(struct sockaddr_in));
 
   serverAddr.sin_family = AF_INET;
   int r = inet_pton(AF_INET, ip, &(serverAddr.sin_addr));
@@ -85,7 +85,7 @@ misc::ErrorUptr BindAndListenForTcpIpV4(int sockfd, const char *ip, uint16_t por
 
 int Accept(int listenfd, struct InetAddress &address, int flags) {
   struct sockaddr_in clientAddr;
-  memset(&clientAddr, 0, sizeof(struct sockaddr_in));
+  ::memset(&clientAddr, 0, sizeof(struct sockaddr_in));
   socklen_t clientLen = sizeof(struct sockaddr);
 
   int connfd = ::accept4(listenfd, (struct sockaddr *) &clientAddr, &clientLen, flags);
@@ -103,6 +103,24 @@ int Accept(int listenfd, struct InetAddress &address, int flags) {
   address.port = ntohs(clientAddr.sin_port);
 
   return connfd;
+}
+
+misc::ErrorUptr Connect(int sockfd, const char *ip, uint16_t port) {
+  struct sockaddr_in server_addr;
+  ::memset(&server_addr, 0, sizeof(struct sockaddr_in));
+
+  server_addr.sin_family = AF_INET;
+  if (inet_pton(AF_INET, ip, &(server_addr.sin_addr)) != 1) {
+    return misc::NewErrorUptr(misc::Error::kInvalidArg, "invalid ip");
+  }
+
+  server_addr.sin_port = htons(port);
+
+  if (connect(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr)) == -1) {
+    return misc::NewErrorUptrByErrno();
+  }
+
+  return nullptr;
 }
 
 

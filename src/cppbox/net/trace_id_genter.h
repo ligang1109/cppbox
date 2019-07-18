@@ -24,16 +24,16 @@ class TraceIdGenter {
 
  private:
   static const uint kIpHexPartLen = 2;
-  static const uint kPortLen = 5;
+  static const uint kPortLen      = 5;
 
-
-  uint increment_;
-  uint increment_len_;
-  u_int64_t max_increment_;
+  uint        increment_;
+  uint        increment_len_;
+  u_int64_t   max_increment_;
   std::string increment_format_;
 
   char ip_buf[kIpHexPartLen + 1];
   char port_buf[kPortLen + 1];
+
   std::vector<char> increment_buf_;
 };
 
