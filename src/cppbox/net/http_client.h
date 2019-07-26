@@ -21,14 +21,25 @@ class HttpClient : public misc::NonCopyable {
  public:
   explicit HttpClient(EventLoop *loop_ptr, TcpConnectionTimeWheel *time_wheel_ptr, size_t tcp_conn_pool_shard_size, size_t tcp_conn_pool_max_shard_cnt);
 
-  void AddServerAddress();
+  void set_server_host(const std::string &host);
+
+  void set_server_port(uint16_t port);
+
+  void SetServerIpList(std::vector<std::string> &ip_list);
 
  private:
-  EventLoop *loop_ptr_;
-
+  EventLoop              *loop_ptr_;
   TcpConnectionTimeWheel *time_wheel_ptr_;
 
+  size_t pool_shard_size_;
+  size_t pool_max_shard_cnt_;
+  size_t pool_index_;
+
   std::map<std::string, TcpConnectionPoolUptr> pool_map_;
+
+  std::string              server_host_;
+  uint16_t                 server_port_;
+  std::vector<std::string> server_ip_list_;
 };
 
 
