@@ -82,7 +82,7 @@ misc::ErrorUptr EventLoop::Loop() {
   while (!quit_) {
     Epoll::ReadyList ready_list;
 
-    auto eu = epoll_uptr_->Wait(&ready_list, timeout_ms_);
+    auto eu = epoll_uptr_->Wait(ready_list, timeout_ms_);
     if (eu != nullptr) {
       return eu;
     }

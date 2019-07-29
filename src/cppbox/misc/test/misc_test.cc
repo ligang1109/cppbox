@@ -56,6 +56,22 @@ TEST_F(MiscTest, UrlEncodeDecode) {
   std::cout << cppbox::misc::UrlDecode(equery.c_str(), equery.size()) << std::endl;
 }
 
+TEST_F(MiscTest, GetIpListByName) {
+  std::vector<std::string> ip_list;
+
+  for (auto &name : {"www.baidu.com", "hao.360.cn", "www.sogou.com"}) {
+    ip_list.clear();
+    auto err_uptr = cppbox::misc::GetIpListByName(name, ip_list);
+    if (err_uptr != nullptr) {
+      std::cout << err_uptr->String() << std::endl;
+    } else {
+      for (auto &ip : ip_list) {
+        std::cout << name << " " << ip << std::endl;
+      }
+    }
+  }
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
 

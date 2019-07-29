@@ -55,7 +55,7 @@ misc::ErrorUptr Epoll::Ctl(int fd, int op, uint32_t events) {
   return nullptr;
 }
 
-misc::ErrorUptr Epoll::Wait(ReadyList *ready_list, int timeout_ms) {
+misc::ErrorUptr Epoll::Wait(ReadyList &ready_list, int timeout_ms) {
   int n = ::epoll_wait(epfd_, evlist_.begin().base(), static_cast<int>(evlist_.size()), timeout_ms);
   if (n == -1) {
     if (errno == EINTR) {
@@ -71,7 +71,7 @@ misc::ErrorUptr Epoll::Wait(ReadyList *ready_list, int timeout_ms) {
   for (auto i = 0; i < n; ++i) {
     int      fd     = evlist_[i].data.fd;
     uint32_t events = evlist_[i].events;
-    ready_list->push_back({fd, events});
+    ready_list.push_back({fd, events});
   }
 
   if (n == evlist_.size()) {

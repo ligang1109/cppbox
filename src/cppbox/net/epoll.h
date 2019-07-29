@@ -32,9 +32,9 @@ class Epoll {
 
   misc::ErrorUptr Del(int fd);
 
-  misc::ErrorUptr Wait(ReadyList *ready_list, int timeout_ms);
+  misc::ErrorUptr Wait(ReadyList &ready_list, int timeout_ms);
 
-  void PrintEvents(uint32_t events);
+  static void PrintEvents(uint32_t events);
 
  private:
   misc::ErrorUptr Ctl(int fd, int op, uint32_t events);

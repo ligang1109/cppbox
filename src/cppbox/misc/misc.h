@@ -7,6 +7,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "error.h"
 
@@ -32,6 +33,8 @@ char HexToInt(char ch);
 std::string UrlEncode(const char *str, int len);
 
 std::string UrlDecode(const char *str, int len);
+
+ErrorUptr GetIpListByName(const char *name, std::vector<std::string> &ip_list);
 
 }
 

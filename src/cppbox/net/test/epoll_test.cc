@@ -40,7 +40,7 @@ TEST_F(EpollTest, Epoll) {
   }
 
   cppbox::net::Epoll::ReadyList ready_list;
-  error_uptr = epoll_->Wait(&ready_list, -1);
+  error_uptr = epoll_->Wait(ready_list, -1);
   if (error_uptr != nullptr) {
     std::cout << "epoll wait error: " + error_uptr->String() << std::endl;
     return;

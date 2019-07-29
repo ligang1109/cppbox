@@ -8,6 +8,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
 
 
 namespace cppbox {
@@ -103,6 +106,33 @@ std::string UrlDecode(const char *str, int len) {
   }
 
   return result;
+}
+
+ErrorUptr GetIpListByName(const char *name, std::vector<std::string> &ip_list) {
+  struct addrinfo hints;
+  ::memset(&hints, 0, sizeof(addrinfo));
+  hints.ai_family   = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
+
+  struct addrinfo *res;
+
+  auto code = ::getaddrinfo(name, nullptr, &hints, &res);
+  if (code != 0) {
+    return NewErrorUptr(code, gai_strerror(code));
+  }
+
+  char ipbuf[16];
+
+  for (auto p = res; p != nullptr; p = p->ai_next) {
+    auto ptr = ::inet_ntop(AF_INET, &((struct sockaddr_in *) p->ai_addr)->sin_addr, ipbuf, sizeof(ipbuf));
+    if (ptr != nullptr) {
+      ip_list.emplace_back(ipbuf);
+    }
+  }
+
+  freeaddrinfo(res);
+
+  return nullptr;
 }
 
 
