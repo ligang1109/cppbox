@@ -40,9 +40,17 @@ void HttpClient::SetServerIpList(std::vector<std::string> &ip_list) {
   for (auto &ip : server_ip_list_) {
     auto it = pool_map_.find(ip);
     if (it == pool_map_.end()) {
-//      pool_map_.emplace(ip,new);
+      pool_map_.emplace(ip, std::unique_ptr<TcpConnectionPool>(new TcpConnectionPool(pool_shard_size_, pool_max_shard_cnt_)));
     }
   }
+
+  if (pool_index_ >= server_ip_list_.size()) {
+    pool_index_ %= server_ip_list_.size();
+  }
+}
+
+TcpConnectionSptr HttpClient::GetConnection() {
+  
 }
 
 }

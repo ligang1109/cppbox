@@ -27,6 +27,8 @@ class HttpClient : public misc::NonCopyable {
 
   void SetServerIpList(std::vector<std::string> &ip_list);
 
+  TcpConnectionSptr GetConnection();
+
  private:
   EventLoop              *loop_ptr_;
   TcpConnectionTimeWheel *time_wheel_ptr_;
