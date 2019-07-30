@@ -49,8 +49,21 @@ void HttpClient::SetServerIpList(std::vector<std::string> &ip_list) {
   }
 }
 
-TcpConnectionSptr HttpClient::GetConnection() {
-  
+HttpConnectionSptr HttpClient::GetConnection() {
+  auto it            = pool_map_.find(server_ip_list_[pool_index_]);
+  auto tcp_conn_sptr = it->second->Get();
+  if (tcp_conn_sptr != nullptr) {
+    return std::static_pointer_cast<HttpConnection>(tcp_conn_sptr);
+  }
+
+  auto connfd = NewTcpIpV4NonBlockSocket();
+  if (connfd == -1) {
+    return nullptr;
+  }
+
+  InetAddress remote_addr{server_ip_list_[pool_index_], server_port_};
+  return std::make_shared<HttpConnection>(connfd, remote_addr, loop_ptr_);
+
 }
 
 }

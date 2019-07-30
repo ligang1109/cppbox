@@ -11,6 +11,7 @@
 #include "event_loop.h"
 #include "tcp_connection_time_wheel.h"
 #include "tcp_connection_pool.h"
+#include "http_connection.h"
 
 namespace cppbox {
 
@@ -27,7 +28,7 @@ class HttpClient : public misc::NonCopyable {
 
   void SetServerIpList(std::vector<std::string> &ip_list);
 
-  TcpConnectionSptr GetConnection();
+  HttpConnectionSptr GetConnection();
 
  private:
   EventLoop              *loop_ptr_;
