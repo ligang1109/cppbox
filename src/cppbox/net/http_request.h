@@ -31,6 +31,8 @@ class HttpRequest : public misc::NonCopyable {
 
   std::string raw_path();
 
+  void set_raw_path(const std::string &raw_path);
+
   std::string HeaderValue(const std::string &field);
 
   void AddHeader(const std::string &field, const std::string &value);

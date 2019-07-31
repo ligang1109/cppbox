@@ -373,24 +373,21 @@ void TcpConnection::WriteFdCallback(const misc::SimpleTimeSptr &happen_st_sptr) 
     if (n < readable) {
       return;
     }
-
-    if (write_complete_callback_) {
-      write_complete_callback_(shared_from_this(), happen_st_sptr);
-    }
-
-    if (write_buf_uptr_->Readable() > 0) {
-      return;
-    }
   }
 
+  if (write_complete_callback_) {
+    write_complete_callback_(shared_from_this(), happen_st_sptr);
+  }
 
   if (status_ == ConnectionStatus::kDisconnecting) {
     ForceClose();
     return;
   }
 
-  rw_event_sptr_->DelEvents(Event::kWriteEvents);
-  loop_ptr_->UpdateEvent(rw_event_sptr_);
+  if (write_buf_uptr_->Readable() == 0) {
+    rw_event_sptr_->DelEvents(Event::kWriteEvents);
+    loop_ptr_->UpdateEvent(rw_event_sptr_);
+  }
 }
 
 void TcpConnection::ErrorFdCallback(const misc::SimpleTimeSptr &happen_st_sptr) {

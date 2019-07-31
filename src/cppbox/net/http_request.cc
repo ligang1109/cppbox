@@ -40,6 +40,10 @@ std::string HttpRequest::raw_path() {
   return raw_path_;
 }
 
+void HttpRequest::set_raw_path(const std::string &raw_path) {
+  raw_path_ = raw_path;
+}
+
 
 std::string HttpRequest::HeaderValue(const std::string &field) {
   auto it = header_map_.find(field);

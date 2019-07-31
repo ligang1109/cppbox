@@ -85,6 +85,8 @@ void HttpConnection::SendRequest() {
     ForceClose();
     return;
   }
+
+  hstatus_ = HttpConnectionStatus::kWaitResponse;
 }
 
 void HttpConnection::RequestProcessComplete() {

@@ -40,7 +40,12 @@ misc::ErrorUptr HttpServer::Start() {
 }
 
 void HttpServer::AddHandleFunc(const std::string &path, const HttpHandleFunc &hf) {
-  handle_map_.emplace(path, hf);
+  auto it = handle_map_.find(path);
+  if (it == handle_map_.end()) {
+    handle_map_.emplace(path, hf);
+  } else {
+    it->second = hf;
+  }
 }
 
 void HttpServer::SetLogger(log::LoggerInterface *logger_ptr) {

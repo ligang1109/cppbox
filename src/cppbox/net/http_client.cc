@@ -29,6 +29,10 @@ void HttpClient::set_server_port(uint16_t port) {
   server_port_ = port;
 }
 
+void HttpClient::set_default_timeout_seconds(int timeout_seconds) {
+  default_timeout_seconds_ = timeout_seconds;
+}
+
 void HttpClient::SetServerIpList(std::vector<std::string> &ip_list) {
   server_ip_list_ = ip_list;
   for (auto it = pool_map_.begin(); it != pool_map_.end();) {
@@ -57,6 +61,15 @@ void HttpClient::SetExpire(int expire_seconds, int expire_rate) {
   expire_rate_    = expire_rate;
 }
 
+void HttpClient::AddResponseCallback(const std::string &path, const ResponseCallback &cb) {
+  auto it = response_callback_map_.find(path);
+  if (it == response_callback_map_.end()) {
+    response_callback_map_.emplace(path, cb);
+  } else {
+    it->second = cb;
+  }
+}
+
 HttpConnectionSptr HttpClient::GetConnection() {
   auto it            = pool_map_.find(server_ip_list_[pool_index_]);
   auto tcp_conn_sptr = it->second->Get();
@@ -76,10 +89,9 @@ HttpConnectionSptr HttpClient::GetConnection() {
 }
 
 void HttpClient::PutConnection(HttpConnectionSptr &http_conn_sptr) {
-  expire_value_ = (expire_value_ + 1) % kMaxExpireValue;
-
-  if (expire_value_ < expire_rate_) {
-    if (http_conn_sptr->last_receive_time_sptr()->Sec() - http_conn_sptr->connected_time_sptr()->Sec() > expire_seconds_) {
+  if (http_conn_sptr->last_receive_time_sptr()->Sec() - http_conn_sptr->connected_time_sptr()->Sec() > expire_seconds_) {
+    expire_value_ = (expire_value_ + 1) % 10;
+    if (expire_value_ < expire_rate_) {
       http_conn_sptr->ForceClose();
       return;
     }
@@ -91,8 +103,32 @@ void HttpClient::PutConnection(HttpConnectionSptr &http_conn_sptr) {
     return;
   }
 
+  http_conn_sptr->ResetMore();
   if (!it->second->Put(http_conn_sptr)) {
     http_conn_sptr->ForceClose();
+  }
+}
+
+void HttpClient::Do(HttpConnectionSptr &http_conn_sptr) {
+
+}
+
+
+void HttpClient::TimeoutCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr) {
+  RunResponseCallback(tcp_conn_sptr, true);
+}
+
+void HttpClient::ReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr) {
+
+}
+
+void HttpClient::RunResponseCallback(const TcpConnectionSptr &tcp_conn_sptr, bool is_timeout) {
+  auto http_conn_sptr = std::static_pointer_cast<HttpConnection>(tcp_conn_sptr);
+  auto path           = http_conn_sptr->Request()->raw_path();
+
+  auto it = response_callback_map_.find(path);
+  if (it != response_callback_map_.end()) {
+    it->second(http_conn_sptr, is_timeout);
   }
 }
 
