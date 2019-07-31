@@ -24,6 +24,7 @@ enum class HttpConnectionStatus {
   KParseRequestComplete = 3,
   kProcessRequest       = 4,
   kWaitClose            = 5,
+  kWaitResponse         = 6,
 };
 
 class HttpConnection : public TcpConnection {

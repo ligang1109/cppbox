@@ -28,7 +28,11 @@ class HttpClient : public misc::NonCopyable {
 
   void SetServerIpList(std::vector<std::string> &ip_list);
 
+  void SetExpire(int expire_seconds, int expire_rate);
+
   HttpConnectionSptr GetConnection();
+
+  void PutConnection(HttpConnectionSptr &http_conn_sptr);
 
  private:
   EventLoop              *loop_ptr_;
@@ -43,6 +47,12 @@ class HttpClient : public misc::NonCopyable {
   std::string              server_host_;
   uint16_t                 server_port_;
   std::vector<std::string> server_ip_list_;
+
+  static const int kMaxExpireValue = 10;
+
+  int expire_seconds_;
+  int expire_rate_;
+  int expire_value_;
 };
 
 

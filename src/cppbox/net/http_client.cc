@@ -16,7 +16,10 @@ HttpClient::HttpClient(EventLoop *loop_ptr, TcpConnectionTimeWheel *time_wheel_p
         time_wheel_ptr_(time_wheel_ptr),
         pool_shard_size_(tcp_conn_pool_shard_size),
         pool_max_shard_cnt_(tcp_conn_pool_max_shard_cnt),
-        pool_index_(0) {}
+        pool_index_(0),
+        expire_seconds_(300),
+        expire_rate_(8),
+        expire_value_(-1) {}
 
 void HttpClient::set_server_host(const std::string &host) {
   server_host_ = host;
@@ -49,6 +52,11 @@ void HttpClient::SetServerIpList(std::vector<std::string> &ip_list) {
   }
 }
 
+void HttpClient::SetExpire(int expire_seconds, int expire_rate) {
+  expire_seconds_ = expire_seconds;
+  expire_rate_    = expire_rate;
+}
+
 HttpConnectionSptr HttpClient::GetConnection() {
   auto it            = pool_map_.find(server_ip_list_[pool_index_]);
   auto tcp_conn_sptr = it->second->Get();
@@ -62,9 +70,32 @@ HttpConnectionSptr HttpClient::GetConnection() {
   }
 
   InetAddress remote_addr{server_ip_list_[pool_index_], server_port_};
-  return std::make_shared<HttpConnection>(connfd, remote_addr, loop_ptr_);
+  pool_index_ = (pool_index_ + 1) % server_ip_list_.size();
 
+  return std::make_shared<HttpConnection>(connfd, remote_addr, loop_ptr_);
 }
+
+void HttpClient::PutConnection(HttpConnectionSptr &http_conn_sptr) {
+  expire_value_ = (expire_value_ + 1) % kMaxExpireValue;
+
+  if (expire_value_ < expire_rate_) {
+    if (http_conn_sptr->last_receive_time_sptr()->Sec() - http_conn_sptr->connected_time_sptr()->Sec() > expire_seconds_) {
+      http_conn_sptr->ForceClose();
+      return;
+    }
+  }
+
+  auto it = pool_map_.find(http_conn_sptr->remote_ip());
+  if (it == pool_map_.end()) {
+    http_conn_sptr->ForceClose();
+    return;
+  }
+
+  if (!it->second->Put(http_conn_sptr)) {
+    http_conn_sptr->ForceClose();
+  }
+}
+
 
 }
 
