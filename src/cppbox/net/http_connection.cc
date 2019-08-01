@@ -11,7 +11,7 @@ namespace net {
 
 HttpConnection::HttpConnection(int connfd, const InetAddress &address, EventLoop *loop_ptr, size_t read_protected_size) :
         TcpConnection(connfd, address, loop_ptr),
-        hstatus_(HttpConnectionStatus::kWaitRequest),
+        hstatus_(HttpConnectionStatus::kWaitData),
         pdata_uptr_(new HttpParseData()),
         parser_uptr_(new HttpParser(pdata_uptr_.get())),
         request_uptr_(new HttpRequest()),
@@ -43,8 +43,25 @@ bool HttpConnection::ParseRequest() {
 
   rbuf_ptr->AddReadIndex(n);
   if (pdata_uptr_->parse_complete) {
-    hstatus_ = HttpConnectionStatus::KParseRequestComplete;
+    hstatus_ = HttpConnectionStatus::kParseComplete;
     request_uptr_->ConvertFromData(std::move(*pdata_uptr_));
+  }
+
+  return true;
+}
+
+bool HttpConnection::ParseResponse() {
+  auto rbuf_ptr = ReadBuffer();
+  auto len      = rbuf_ptr->Readable();
+  auto n        = parser_uptr_->Execute(rbuf_ptr->ReadBegin(), len);
+  if (n != len) {
+    return false;
+  }
+
+  rbuf_ptr->AddReadIndex(n);
+  if (pdata_uptr_->parse_complete) {
+    hstatus_ = HttpConnectionStatus::kParseComplete;
+    response_uptr_->ConvertFromData(std::move(*pdata_uptr_));
   }
 
   return true;
@@ -86,7 +103,7 @@ void HttpConnection::SendRequest() {
     return;
   }
 
-  hstatus_ = HttpConnectionStatus::kWaitResponse;
+  hstatus_ = HttpConnectionStatus::kWaitData;
 }
 
 void HttpConnection::RequestProcessComplete() {
@@ -99,7 +116,7 @@ void HttpConnection::RequestProcessComplete() {
 }
 
 void HttpConnection::ResetMore() {
-  hstatus_ = HttpConnectionStatus::kWaitRequest;
+  hstatus_ = HttpConnectionStatus::kWaitData;
 
   pdata_uptr_->Reset();
   parser_uptr_->Reset();

@@ -61,9 +61,9 @@ void HttpServer::ReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc
 
   bool parse_ok;
   switch (http_conn_sptr->hstatus()) {
-    case HttpConnectionStatus::kWaitRequest:
-      http_conn_sptr->set_hstatus(HttpConnectionStatus::kParseRequest);
-    case HttpConnectionStatus::kParseRequest:
+    case HttpConnectionStatus::kWaitData:
+      http_conn_sptr->set_hstatus(HttpConnectionStatus::kParseData);
+    case HttpConnectionStatus::kParseData:
       parse_ok = http_conn_sptr->ParseRequest();
       break;
     default:
@@ -74,7 +74,7 @@ void HttpServer::ReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc
     http_conn_sptr->SendError(400, "Bad Request");
     return;
   }
-  if (http_conn_sptr->hstatus() == HttpConnectionStatus::KParseRequestComplete) {
+  if (http_conn_sptr->hstatus() == HttpConnectionStatus::kParseComplete) {
     ProcessRequest(http_conn_sptr);
   }
 }
@@ -86,7 +86,7 @@ void HttpServer::WriteCompleteCallback(const TcpConnectionSptr &tcp_conn_sptr, c
 }
 
 void HttpServer::ProcessRequest(const HttpConnectionSptr &http_conn_sptr) {
-  http_conn_sptr->set_hstatus(HttpConnectionStatus::kProcessRequest);
+  http_conn_sptr->set_hstatus(HttpConnectionStatus::kProcessData);
 
   auto it = handle_map_.find(http_conn_sptr->Request()->raw_path());
   if (it == handle_map_.end()) {

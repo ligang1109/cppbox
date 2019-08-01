@@ -115,20 +115,51 @@ void HttpClient::Do(HttpConnectionSptr &http_conn_sptr) {
 
 
 void HttpClient::TimeoutCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr) {
-  RunResponseCallback(tcp_conn_sptr, true);
+  auto http_conn_sptr = std::static_pointer_cast<HttpConnection>(tcp_conn_sptr);
+
+  RunResponseCallback(http_conn_sptr, RequestResult::kTimeout);
 }
 
 void HttpClient::ReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr) {
+  auto http_conn_sptr = std::static_pointer_cast<HttpConnection>(tcp_conn_sptr);
 
+  bool parse_ok;
+  switch (http_conn_sptr->hstatus()) {
+    case HttpConnectionStatus::kWaitData:
+      http_conn_sptr->set_hstatus(HttpConnectionStatus::kParseData);
+    case HttpConnectionStatus::kParseData:
+      parse_ok = http_conn_sptr->ParseResponse();
+      break;
+    default:
+      return;
+  }
+
+  if (!parse_ok) {
+    RunResponseCallback(http_conn_sptr, RequestResult::kConnectionError);
+    return;
+  }
+
+  if (http_conn_sptr->hstatus() == HttpConnectionStatus::kParseComplete) {
+    RunResponseCallback(http_conn_sptr, RequestResult::kSuccess);
+  }
 }
 
-void HttpClient::RunResponseCallback(const TcpConnectionSptr &tcp_conn_sptr, bool is_timeout) {
-  auto http_conn_sptr = std::static_pointer_cast<HttpConnection>(tcp_conn_sptr);
-  auto path           = http_conn_sptr->Request()->raw_path();
+void HttpClient::WriteCompleteCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr) {
+  if (tcp_conn_sptr->status() == TcpConnection::ConnectionStatus::kConnecting) {
+    tcp_conn_sptr->set_status(TcpConnection::ConnectionStatus::kConnected);
+  }
+}
+
+void HttpClient::RunResponseCallback(const HttpConnectionSptr &http_conn_sptr, RequestResult result) {
+  auto path = http_conn_sptr->Request()->raw_path();
 
   auto it = response_callback_map_.find(path);
   if (it != response_callback_map_.end()) {
-    it->second(http_conn_sptr, is_timeout);
+    it->second(http_conn_sptr, result);
+  }
+
+  if (result != RequestResult::kSuccess) {
+    http_conn_sptr->set_hstatus(HttpConnectionStatus::kWaitClose);
   }
 }
 

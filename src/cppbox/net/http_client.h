@@ -20,7 +20,13 @@ namespace net {
 
 class HttpClient : public misc::NonCopyable {
  public:
-  using ResponseCallback = std::function<void(const HttpConnectionSptr &, bool is_timeout)>;
+  enum class RequestResult {
+    kSuccess         = 0,
+    kTimeout         = 1,
+    kConnectionError = 2,
+  };
+
+  using ResponseCallback = std::function<void(const HttpConnectionSptr &, RequestResult result)>;
 
   explicit HttpClient(EventLoop *loop_ptr, TcpConnectionTimeWheel *time_wheel_ptr, size_t tcp_conn_pool_shard_size, size_t tcp_conn_pool_max_shard_cnt);
 
@@ -49,7 +55,7 @@ class HttpClient : public misc::NonCopyable {
 
   void WriteCompleteCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr);
 
-  void RunResponseCallback(const TcpConnectionSptr &tcp_conn_sptr, bool is_timeout);
+  void RunResponseCallback(const HttpConnectionSptr &http_conn_sptr, RequestResult result);
 
   EventLoop              *loop_ptr_;
   TcpConnectionTimeWheel *time_wheel_ptr_;

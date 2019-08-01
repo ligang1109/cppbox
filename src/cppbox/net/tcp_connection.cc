@@ -69,6 +69,10 @@ TcpConnection::ConnectionStatus TcpConnection::status() {
   return status_;
 }
 
+void TcpConnection::set_status(TcpConnection::ConnectionStatus status) {
+  status_ = status;
+}
+
 misc::SimpleTimeSptr TcpConnection::connected_time_sptr() {
   return connected_time_sptr_;
 }

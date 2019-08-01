@@ -19,12 +19,11 @@ namespace net {
 
 
 enum class HttpConnectionStatus {
-  kWaitRequest          = 1,
-  kParseRequest         = 2,
-  KParseRequestComplete = 3,
-  kProcessRequest       = 4,
-  kWaitClose            = 5,
-  kWaitResponse         = 6,
+  kWaitData      = 1,
+  kParseData     = 2,
+  kParseComplete = 3,
+  kProcessData   = 4,
+  kWaitClose     = 5,
 };
 
 class HttpConnection : public TcpConnection {
@@ -40,6 +39,8 @@ class HttpConnection : public TcpConnection {
   HttpResponse *Response();
 
   bool ParseRequest();
+
+  bool ParseResponse();
 
   void SendError(int code, const std::string &msg);
 

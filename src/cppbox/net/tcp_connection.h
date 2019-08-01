@@ -54,6 +54,8 @@ class TcpConnection : public misc::NonCopyable,
 
   ConnectionStatus status();
 
+  void set_status(ConnectionStatus status);
+
   misc::SimpleTimeSptr connected_time_sptr();
 
   misc::SimpleTimeSptr last_receive_time_sptr();
