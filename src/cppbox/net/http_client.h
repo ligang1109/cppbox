@@ -34,7 +34,7 @@ class HttpClient : public misc::NonCopyable {
 
   void set_server_port(uint16_t port);
 
-  void set_default_timeout_seconds(int timeout_seconds);
+  void set_default_timeout_seconds(uint16_t timeout_seconds);
 
   void SetServerIpList(std::vector<std::string> &ip_list);
 
@@ -44,16 +44,20 @@ class HttpClient : public misc::NonCopyable {
 
   HttpConnectionSptr GetConnection();
 
-  void PutConnection(HttpConnectionSptr &http_conn_sptr);
+  void PutConnection(const HttpConnectionSptr &http_conn_sptr);
 
-  void Do(HttpConnectionSptr &http_conn_sptr);
+  void Do(const HttpConnectionSptr &http_conn_sptr);
 
  private:
+  void SendRequest(const HttpConnectionSptr &http_conn_sptr);
+
   void TimeoutCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr);
 
   void ReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr);
 
   void WriteCompleteCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr);
+
+  void ErrorCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr);
 
   void RunResponseCallback(const HttpConnectionSptr &http_conn_sptr, RequestResult result);
 
@@ -75,7 +79,7 @@ class HttpClient : public misc::NonCopyable {
   int expire_rate_;
   int expire_value_;
 
-  int default_timeout_seconds_;
+  uint16_t default_timeout_seconds_;
 };
 
 

@@ -225,8 +225,6 @@ void TcpConnection::GracefulClose(const misc::SimpleTimeSptr &happen_st_sptr) {
 }
 
 void TcpConnection::ForceClose(const misc::SimpleTimeSptr &happen_st_sptr) {
-  status_ = ConnectionStatus::kDisconnected;
-
   if (happen_st_sptr == nullptr) {
     disconnected_time_sptr_->Update();
   } else {
@@ -239,6 +237,8 @@ void TcpConnection::ForceClose(const misc::SimpleTimeSptr &happen_st_sptr) {
   if (disconnected_callback_) {
     disconnected_callback_(shared_from_this(), disconnected_time_sptr_);
   }
+
+  status_ = ConnectionStatus::kDisconnected;
 }
 
 misc::SimpleBuffer *TcpConnection::ReadBuffer() {
@@ -395,6 +395,8 @@ void TcpConnection::WriteFdCallback(const misc::SimpleTimeSptr &happen_st_sptr) 
 }
 
 void TcpConnection::ErrorFdCallback(const misc::SimpleTimeSptr &happen_st_sptr) {
+  status_ = ConnectionStatus::kError;
+
   if (error_callback_) {
     error_callback_(shared_from_this(), happen_st_sptr);
   }

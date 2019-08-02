@@ -284,6 +284,10 @@ void TcpServer::ConnectionThread::DisconnectedCallback(const TcpConnectionSptr &
     server_ptr_->disconnected_callback_(tcp_conn_sptr, happen_st_sptr);
   }
 
+  if (tcp_conn_sptr->status() != TcpConnection::ConnectionStatus::kTimeout) {
+    time_wheel_uptr_->DelConnection(tcp_conn_sptr->connfd());
+  }
+
   if (pool_uptr_->Put(tcp_conn_sptr)) {
     tcp_conn_sptr->Reset();
   }
@@ -292,6 +296,7 @@ void TcpServer::ConnectionThread::DisconnectedCallback(const TcpConnectionSptr &
 }
 
 void TcpServer::ConnectionThread::TimeoutCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr) {
+  tcp_conn_sptr->set_status(TcpConnection::ConnectionStatus::kTimeout);
   tcp_conn_sptr->ForceClose(happen_st_sptr);
 }
 

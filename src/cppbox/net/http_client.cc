@@ -29,7 +29,7 @@ void HttpClient::set_server_port(uint16_t port) {
   server_port_ = port;
 }
 
-void HttpClient::set_default_timeout_seconds(int timeout_seconds) {
+void HttpClient::set_default_timeout_seconds(uint16_t timeout_seconds) {
   default_timeout_seconds_ = timeout_seconds;
 }
 
@@ -88,7 +88,7 @@ HttpConnectionSptr HttpClient::GetConnection() {
   return std::make_shared<HttpConnection>(connfd, remote_addr, loop_ptr_);
 }
 
-void HttpClient::PutConnection(HttpConnectionSptr &http_conn_sptr) {
+void HttpClient::PutConnection(const HttpConnectionSptr &http_conn_sptr) {
   if (http_conn_sptr->last_receive_time_sptr()->Sec() - http_conn_sptr->connected_time_sptr()->Sec() > expire_seconds_) {
     expire_value_ = (expire_value_ + 1) % 10;
     if (expire_value_ < expire_rate_) {
@@ -109,10 +109,20 @@ void HttpClient::PutConnection(HttpConnectionSptr &http_conn_sptr) {
   }
 }
 
-void HttpClient::Do(HttpConnectionSptr &http_conn_sptr) {
+void HttpClient::Do(const HttpConnectionSptr &http_conn_sptr) {
 
 }
 
+
+void HttpClient::SendRequest(const HttpConnectionSptr &http_conn_sptr) {
+  auto timeout = http_conn_sptr->timeout_seconds();
+  if (timeout == 0) {
+    timeout = default_timeout_seconds_;
+  }
+  time_wheel_ptr_->AddConnection(http_conn_sptr, timeout);
+
+  http_conn_sptr->SendRequest();
+}
 
 void HttpClient::TimeoutCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr) {
   auto http_conn_sptr = std::static_pointer_cast<HttpConnection>(tcp_conn_sptr);
@@ -135,11 +145,14 @@ void HttpClient::ReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc
   }
 
   if (!parse_ok) {
+    time_wheel_ptr_->DelConnection(http_conn_sptr->connfd());
     RunResponseCallback(http_conn_sptr, RequestResult::kConnectionError);
     return;
   }
 
   if (http_conn_sptr->hstatus() == HttpConnectionStatus::kParseComplete) {
+    time_wheel_ptr_->DelConnection(http_conn_sptr->connfd());
+    http_conn_sptr->set_hstatus(HttpConnectionStatus::kProcessData);
     RunResponseCallback(http_conn_sptr, RequestResult::kSuccess);
   }
 }
@@ -147,7 +160,12 @@ void HttpClient::ReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc
 void HttpClient::WriteCompleteCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr) {
   if (tcp_conn_sptr->status() == TcpConnection::ConnectionStatus::kConnecting) {
     tcp_conn_sptr->set_status(TcpConnection::ConnectionStatus::kConnected);
+    SendRequest(std::static_pointer_cast<HttpConnection>(tcp_conn_sptr));
   }
+}
+
+void HttpClient::ErrorCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr) {
+  time_wheel_ptr_->DelConnection(tcp_conn_sptr->connfd());
 }
 
 void HttpClient::RunResponseCallback(const HttpConnectionSptr &http_conn_sptr, RequestResult result) {
@@ -159,7 +177,7 @@ void HttpClient::RunResponseCallback(const HttpConnectionSptr &http_conn_sptr, R
   }
 
   if (result != RequestResult::kSuccess) {
-    http_conn_sptr->set_hstatus(HttpConnectionStatus::kWaitClose);
+    http_conn_sptr->ForceClose();
   }
 }
 

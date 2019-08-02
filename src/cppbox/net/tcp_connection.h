@@ -34,6 +34,8 @@ class TcpConnection : public misc::NonCopyable,
     kConnected     = 2,
     kDisconnecting = 3,
     kDisconnected  = 4,
+    kTimeout       = 5,
+    kError         = 6,
   };
 
   explicit TcpConnection(int connfd, const InetAddress &address, EventLoop *loop_ptr, size_t read_protected_size = 4096);
