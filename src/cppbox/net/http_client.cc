@@ -157,11 +157,8 @@ void HttpClient::ReadCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc
   }
 }
 
-void HttpClient::WriteCompleteCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr) {
-  if (tcp_conn_sptr->status() == TcpConnection::ConnectionStatus::kConnecting) {
-    tcp_conn_sptr->set_status(TcpConnection::ConnectionStatus::kConnected);
-    SendRequest(std::static_pointer_cast<HttpConnection>(tcp_conn_sptr));
-  }
+void HttpClient::ConnectedCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr) {
+  SendRequest(std::static_pointer_cast<HttpConnection>(tcp_conn_sptr));
 }
 
 void HttpClient::ErrorCallback(const TcpConnectionSptr &tcp_conn_sptr, const misc::SimpleTimeSptr &happen_st_sptr) {
