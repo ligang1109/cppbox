@@ -125,7 +125,7 @@ void TcpConnection::ConnectEstablished(const misc::SimpleTimeSptr &happen_st_spt
     connected_time_sptr_->Update(happen_st_sptr->Sec(), happen_st_sptr->Usec());
   }
 
-  rw_event_sptr_->set_events(Event::kReadEvents | Event::kErrorEvents);
+  rw_event_sptr_->set_events(Event::kReadEvents);
   loop_ptr_->UpdateEvent(rw_event_sptr_);
 
   if (connected_callback_) {
@@ -160,6 +160,7 @@ ssize_t TcpConnection::Send(char *data, size_t len) {
         return 0;
       }
 
+      ErrorFdCallback(misc::NowTimeSptr());
       return -1;
     }
     break;
@@ -193,6 +194,7 @@ ssize_t TcpConnection::SendWriteBuffer() {
         return 0;
       }
 
+      ErrorFdCallback(misc::NowTimeSptr());
       return -1;
     }
     break;
@@ -318,11 +320,7 @@ void TcpConnection::ReadFdCallback(const misc::SimpleTimeSptr &happen_st_sptr) {
         return;
       }
 
-      if (error_callback_) {
-        error_callback_(shared_from_this(), happen_st_sptr);
-      }
-
-      ForceClose(happen_st_sptr);
+      ErrorFdCallback(happen_st_sptr);
       return;
     }
 
@@ -362,11 +360,7 @@ void TcpConnection::WriteFdCallback(const misc::SimpleTimeSptr &happen_st_sptr) 
           return;
         }
 
-        if (error_callback_) {
-          error_callback_(shared_from_this(), happen_st_sptr);
-        }
-
-        ForceClose(happen_st_sptr);
+        ErrorFdCallback(happen_st_sptr);
         return;
       }
       break;

@@ -74,7 +74,7 @@ void HttpConnection::SendError(int code, const std::string &msg) {
   SendResponse();
 }
 
-void HttpConnection::SendResponse() {
+bool HttpConnection::SendResponse() {
   auto wbuf_ptr = WriteBuffer();
 
   response_uptr_->AppendToBuffer(wbuf_ptr);
@@ -82,16 +82,17 @@ void HttpConnection::SendResponse() {
   auto len = wbuf_ptr->Readable();
   auto n   = SendWriteBuffer();
   if (n == -1) {
-    ForceClose();
-    return;
+    return false;
   }
 
   if (n == len) {
     RequestProcessComplete();
   }
+
+  return true;
 }
 
-void HttpConnection::SendRequest() {
+bool HttpConnection::SendRequest() {
   auto wbuf_ptr = WriteBuffer();
 
   request_uptr_->AppendToBuffer(wbuf_ptr);
@@ -99,11 +100,11 @@ void HttpConnection::SendRequest() {
   auto len = wbuf_ptr->Readable();
   auto n   = SendWriteBuffer();
   if (n == -1) {
-    ForceClose();
-    return;
+    return false;
   }
 
   hstatus_ = HttpConnectionStatus::kWaitData;
+  return true;
 }
 
 void HttpConnection::RequestProcessComplete() {

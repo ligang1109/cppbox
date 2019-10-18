@@ -44,9 +44,9 @@ class HttpConnection : public TcpConnection {
 
   void SendError(int code, const std::string &msg);
 
-  void SendResponse();
+  bool SendResponse();
 
-  void SendRequest();
+  bool SendRequest();
 
   void RequestProcessComplete();
 

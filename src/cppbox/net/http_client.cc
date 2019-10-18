@@ -166,9 +166,7 @@ void HttpClient::ErrorCallback(const TcpConnectionSptr &tcp_conn_sptr, const mis
 }
 
 void HttpClient::RunResponseCallback(const HttpConnectionSptr &http_conn_sptr, RequestResult result) {
-  auto path = http_conn_sptr->Request()->raw_path();
-
-  auto it = response_callback_map_.find(path);
+  auto it = response_callback_map_.find(http_conn_sptr->Request()->raw_path());
   if (it != response_callback_map_.end()) {
     it->second(http_conn_sptr, result);
   }
